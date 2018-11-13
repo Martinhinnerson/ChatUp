@@ -23,6 +23,7 @@ namespace ChatUp
     {
         public const string ChatsPropertyName = "Chats";
 
+        private ListBox _chatListBox;
         private ObservableCollection<ChatModel> _chats;
 
         public ObservableCollection<ChatModel> Chats
@@ -38,11 +39,31 @@ namespace ChatUp
                     return;
                 }
                 _chats = value;
-                NotifyPropertyChanged(m => m.Chats);
+                RaisePropertyChanged("Chats");
             }
         }
+
+        public ObservableCollection<ListBox> ListBoxes
+        {
+            get
+            {
+                return _listBoxes;
+            }
+            set
+            {
+                if (_listBoxes == value)
+                {
+                    return;
+                }
+                _listBoxes = value;
+                RaisePropertyChanged("ListBoxes");
+            }
+        }
+
         public ChatViewModel()
         {
+            _chatListBox = new ListBox();
+
             _chats = new ObservableCollection<ChatModel>();
             ConnectButtonCommand = new RelayCommand(new Action<object>(ConnectButtonClick));
             AddChatButtonCommand = new RelayCommand(new Action<object>(AddChatButtonClick));
@@ -81,9 +102,40 @@ namespace ChatUp
 
         private void AddChatButtonClick(object sender)
         {
+            //add new chat
             _chats.Add(new ChatModel() { Name = sender + "1" });
+            //create new list box with 6 list box items
+            ListBox newList = new ListBox();
+            newList.Background = System.Windows.Media.Brushes.Transparent;
+            newList.Foreground = System.Windows.Media.Brushes.White;
+            newList.Items.Add(new ListBoxItem
+            {
+                Content = " "
+            });
+            newList.Items.Add(new ListBoxItem
+            {
+                Content = "{binding LocalIp}"
+            });
+            newList.Items.Add(new ListBoxItem
+            {
+                Content = "{binding LocalPort}"
+            });
+            newList.Items.Add(new ListBoxItem
+            {
+                Content = " "
+            });
+            newList.Items.Add(new ListBoxItem
+            {
+                Content = "{binding RemoteIp}"
+            });
+            newList.Items.Add(new ListBoxItem
+            {
+                Content = "{binding RemotePort}"
+            });
+                        
             MessageBox.Show(sender.ToString());
         }
+        
 
 
     }

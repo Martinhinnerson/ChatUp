@@ -28,7 +28,7 @@ namespace ChatUp
             set
             {
                 _localPort = value;
-                NotifyPropertyChanged(m => m.LocalPort);
+                RaisePropertyChanged("LocalPort");
             }
         }
         private string _remotePort;
@@ -38,7 +38,7 @@ namespace ChatUp
             set
             {
                 _remotePort = value;
-                NotifyPropertyChanged(m => m.RemotePort);
+                RaisePropertyChanged("RemotePort");
             }
         }
         private string _localIP;
@@ -48,17 +48,17 @@ namespace ChatUp
             set
             {
                 _localIP = value;
-                NotifyPropertyChanged(m => m.LocalIP);
+                RaisePropertyChanged("LocalIP");
             }
         }
-        private string _remoteIp;
+        private string _remoteIP;
         public string RemoteIP
         {
             get { return _remoteIP; }
             set
             {
                 _remoteIP = value;
-                NotifyPropertyChanged(m => m.RemoteIP);
+                RaisePropertyChanged("RemoteIP");
             }
         }
 
@@ -68,8 +68,8 @@ namespace ChatUp
             get { return _userName; }
             set
             {
-                _usetName = value;
-                NotifyPropertyChanged(m => m.UserName);
+                _userName = value;
+                RaisePropertyChanged("UserName");
             }
         }
         public ChatModel()
@@ -105,18 +105,6 @@ namespace ChatUp
                 }
             }
             return "127.0.0.1";
-        }
-
-
-
-        public override bool Equals(object obj)
-        {
-            return obj is ChatModel && ((ChatModel)obj).localIP.Equals(localIP);
-        }
-
-        public override int GetHashCode()
-        {
-            return localIP.GetHashCode();
         }
 
     }
