@@ -6,9 +6,6 @@
         xmlns:local="clr-namespace:ChatUp"
         mc:Ignorable="d"
         Title="ChatUp">
-    <Window.Resources>
-        <local:ChatModel x:Key="Chats"/>
-    </Window.Resources>
     <Grid x:Name="LayoutRoot">
         <Grid.Background>
             <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -25,22 +22,27 @@
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,100,0,0">
-            <Button Name="btnAddChat" CommandParameter="Add Chat" Command="{Binding AddChatButtonCommand}" Content="Add Chat" Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2" />
-            <Grid>
+           <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>
                     <ColumnDefinition Width="2*"/>
                 </Grid.ColumnDefinitions>
-                <ListBox Background="Transparent" Foreground="White" >
-                    <ListBoxItem Content="Local" FontWeight="Bold" />
-                    <ListBoxItem Content="Ip:" />
-                    <ListBoxItem Content="Port:" />
-                    <ListBoxItem Content="Remote" FontWeight="Bold"/>
-                    <ListBoxItem Content="Ip:" />
-                    <ListBoxItem Content="Port:" />
-                </ListBox>
-                <ListBox Grid.Column="1" Background="Transparent" Foreground="White" ItemsSource="{Binding Source={StaticResource _chatListBox}}">
-                </ListBox>
+                <ItemsControl Background="Transparent" Foreground="White" >
+                    <TextBlock Text="Local" FontWeight="Bold"  Foreground="White"/>
+                    <TextBlock Text="Ip:" Foreground="White" />
+                    <TextBlock Text="Port:" Foreground="White" />
+                    <TextBlock Text="Remote" FontWeight="Bold"  Foreground="White"/>
+                    <TextBlock Text="Ip:"  Foreground="White"/>
+                    <TextBlock Text="Port:" Foreground="White" />
+                </ItemsControl>
+                <ItemsControl Grid.Column="1" Background="Transparent" Foreground="White" DataContext="{Binding Chat}">
+                    <TextBlock Text="" Focusable="False" />
+                    <TextBox  Text="{Binding LocalIP, Mode=TwoWay}" />
+                    <TextBox Text="{Binding LocalPort, Mode=TwoWay}" />
+                    <TextBlock Text="" Focusable="False"/>
+                    <TextBox Text="{Binding RemoteIP, Mode=TwoWay}" />
+                    <TextBox Text="{Binding RemotePort, Mode=TwoWay}" />
+                </ItemsControl>
             </Grid>
             
             
@@ -50,7 +52,7 @@
 
         <TextBox Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" Width="500"  Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2" FontSize="16" MaxLines="2147483646" TextWrapping="Wrap"/>
 
-        <Button Content="Send" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Right" Width="70" Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
+        <Button Name="btnSend" Content="Send" Command="{Binding SendButtonCommand}" CommandParameter="SendButton" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Right" Width="70" Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
         
     </Grid>
 </Window>

@@ -21,78 +21,17 @@ namespace ChatUp
 {
     public class ChatViewModel : BaseINPC
     {
-        public const string ChatsPropertyName = "Chats";
-
-        private ListBox _chatListBox;
-        private ObservableCollection<ChatModel> _chats;
-
-        public ObservableCollection<ChatModel> Chats
-        {
-            get
-            {
-                return _chats;
-            }
-            set
-            {
-                if (_chats == value)
-                {
-                    return;
-                }
-                _chats = value;
-                RaisePropertyChanged("Chats");
-            }
-        }
-
-        public ObservableCollection<ListBox> ListBoxes
-        {
-            get
-            {
-                return _listBoxes;
-            }
-            set
-            {
-                if (_listBoxes == value)
-                {
-                    return;
-                }
-                _listBoxes = value;
-                RaisePropertyChanged("ListBoxes");
-            }
-        }
+        public ChatModel Chat { get; set; }
+        
 
         public ChatViewModel()
         {
-            _chatListBox = new ListBox();
-
-            _chats = new ObservableCollection<ChatModel>();
+            Chat = new ChatModel();
             ConnectButtonCommand = new RelayCommand(new Action<object>(ConnectButtonClick));
-            AddChatButtonCommand = new RelayCommand(new Action<object>(AddChatButtonClick));
+            SendButtonCommand = new RelayCommand(new Action<object>(SendButtonClick));
         }
-        private ICommand _connectButtonCommand;
-        public ICommand ConnectButtonCommand
-        {
-            get
-            {
-                return _connectButtonCommand;
-            }
-            set
-            {
-                _connectButtonCommand = value;
-            }
-        }
-        private ICommand _addChatButtonCommand;
-        public ICommand AddChatButtonCommand
-        {
-            get
-            {
-                return _addChatButtonCommand;
-            }
-            set
-            {
-                _addChatButtonCommand = value;
-            }
-        }
-
+        public ICommand ConnectButtonCommand { get; set; }
+        public ICommand SendButtonCommand { get; set; }
 
         private void ConnectButtonClick(object sender)
         {
@@ -100,44 +39,13 @@ namespace ChatUp
             MessageBox.Show(sender.ToString());
         }
 
-        private void AddChatButtonClick(object sender)
+        private void SendButtonClick(object sender)
         {
-            //add new chat
-            _chats.Add(new ChatModel() { Name = sender + "1" });
-            //create new list box with 6 list box items
-            ListBox newList = new ListBox();
-            newList.Background = System.Windows.Media.Brushes.Transparent;
-            newList.Foreground = System.Windows.Media.Brushes.White;
-            newList.Items.Add(new ListBoxItem
-            {
-                Content = " "
-            });
-            newList.Items.Add(new ListBoxItem
-            {
-                Content = "{binding LocalIp}"
-            });
-            newList.Items.Add(new ListBoxItem
-            {
-                Content = "{binding LocalPort}"
-            });
-            newList.Items.Add(new ListBoxItem
-            {
-                Content = " "
-            });
-            newList.Items.Add(new ListBoxItem
-            {
-                Content = "{binding RemoteIp}"
-            });
-            newList.Items.Add(new ListBoxItem
-            {
-                Content = "{binding RemotePort}"
-            });
-                        
+            //implement send button click here
             MessageBox.Show(sender.ToString());
         }
+
         
-
-
     }
 
     public class RelayCommand : ICommand

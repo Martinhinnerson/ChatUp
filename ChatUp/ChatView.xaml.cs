@@ -33,7 +33,7 @@ namespace ChatUp
             var horisontalBorderHeight = SystemParameters.ResizeFrameHorizontalBorderHeight;
             var verticalBorderWidth = SystemParameters.ResizeFrameVerticalBorderWidth;
             var captionHeight = SystemParameters.CaptionHeight;
-            
+
             Width = contentWidth + 2 * verticalBorderWidth;
             Height = contentHeight + captionHeight + 2 * horisontalBorderHeight;
 
