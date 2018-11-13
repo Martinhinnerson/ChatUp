@@ -12,7 +12,20 @@ namespace ChatUp
     /// Interaction logic for App.xaml
     /// </summary>
     public partial class App : Application
-    {/*
+    {
+
+        //Another approach to bind the view and viewmodel
+        /*
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+            ChatUp.ChatView window = new ChatView();
+            ChatViewModel VM = new ChatViewModel();
+            window.DataContext = VM;
+            window.Show();
+        }*/
+
+        /*
         public App()
         {
             this.Startup += this.Application_Startup;

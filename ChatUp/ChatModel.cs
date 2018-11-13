@@ -20,31 +20,40 @@ namespace ChatUp
 {
     public class ChatModel : BaseINPC
     {
-        private Socket _socket { get; set; }
-        private EndPoint _epLocal { get; set; }
-        private EndPoint _epRemote { get; set; }
-
-        private string _localIP
+        public Socket Socket { get; set; }
+        private string _epLocal;
+        public string epLocal
         {
-            get { return _localIP; }
+            get { return _epLocal; }
             set
             {
-                _localIP = value;
-                RaisePropertyChanged("Local IP");
+                _epLocal = value;
+                RaisePropertyChanged("epLocal");
             }
         }
-        private string _remoteIP { get; set; }
+        public int epRemote { get; set; } //This should be EndPoint instead
+        public string localIP { get; set; }
+        public string remoteIP { get; set; }
 
-        byte[] _buffer;
+        byte[] _buffer; //this should maybe be in viewModel?
 
-        private string _userName { get; set; }
+        public string UserName { get; set; }
+
+        public ChatModel()
+        {
+            string ip = "127.0.0.1";
+            localIP = ip;//GetLocalIP();
+            epLocal = "1337";
+            epRemote = 1338;
+            remoteIP = ip; //GetLocalIP(); //This should be user input instead
+        }
 
 
         private void loadBackend()
         {
-            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            Socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
-            _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
             //get user ip
             //localIpText.Text = GetLocalIP();
@@ -69,12 +78,12 @@ namespace ChatUp
 
         public override bool Equals(object obj)
         {
-            return obj is ChatModel && ((ChatModel)obj)._localIP.Equals(_localIP);
+            return obj is ChatModel && ((ChatModel)obj).localIP.Equals(localIP);
         }
 
         public override int GetHashCode()
         {
-            return _localIP.GetHashCode();
+            return localIP.GetHashCode();
         }
 
     }

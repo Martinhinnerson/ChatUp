@@ -42,17 +42,48 @@ namespace ChatUp
             }
         }
 
-        public ICommand ButtonCommand { get; set; }
-
+        private ICommand _connectButtonCommand; 
+        public ICommand ConnectButtonCommand
+        {
+            get
+            {
+                return _connectButtonCommand;
+            }
+            set
+            {
+                _connectButtonCommand = value;
+            }
+        }
+        private ICommand _addChatButtonCommand; 
+        public ICommand AddChatButtonCommand
+        {
+            get
+            {
+                return _addChatButtonCommand;
+            }
+            set
+            {
+                _addChatButtonCommand = value;
+            }
+        }
+        
         public ChatViewModel()
         {
-            ButtonCommand = new RelayCommand(o => ConnectButtonClick("ConnectButton"));
+            _chats = new ObservableCollection<ChatModel>();
+            ConnectButtonCommand = new RelayCommand(new Action<object>(ConnectButtonClick));
+            AddChatButtonCommand = new RelayCommand(new Action<object>(AddChatButtonClick));
         }
 
 
         private void ConnectButtonClick(object sender)
         {
             //implement button click here
+            MessageBox.Show(sender.ToString());
+        }
+
+        private void AddChatButtonClick(object sender)
+        {
+            _chats.Add(new ChatModel() { Name = sender + "1" });
             MessageBox.Show(sender.ToString());
         }
 
@@ -64,6 +95,8 @@ namespace ChatUp
         private readonly Action<object> _execute;
         private readonly Predicate<object> _canExecute;
 
+        public RelayCommand(Action<object> execute) : this(execute, null) { }
+
         public RelayCommand(Action<object> execute, Predicate<object> canExecute = null)
         {
             if (execute == null) throw new ArgumentNullException("execute");
@@ -74,7 +107,7 @@ namespace ChatUp
 
         public bool CanExecute(object parameter)
         {
-            return _canExecute == null || _canExecute(parameter);
+            return _canExecute == null ? true : _canExecute((object)parameter);
         }
 
         public event EventHandler CanExecuteChanged
@@ -85,7 +118,7 @@ namespace ChatUp
 
         public void Execute(object parameter)
         {
-            _execute(parameter ?? "<N/A>");
+            _execute((object)parameter);
         }
 
     }

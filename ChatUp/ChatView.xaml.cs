@@ -40,14 +40,20 @@ namespace ChatUp
             this.DataContext = new ChatViewModel(); // Bind the viewmodel to the view
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        /*
+        //These functions should not be here since its the view and not viewmodel?
+        private void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
             txtLocalIP.GetBindingExpression(TextBox.TextProperty).UpdateSource();
             txtLocalPort.GetBindingExpression(TextBox.TextProperty).UpdateSource();
             txtRemoteIP.GetBindingExpression(TextBox.TextProperty).UpdateSource();
             txtRemotePort.GetBindingExpression(TextBox.TextProperty).UpdateSource();
         }
-
+        private void AddChatButton_Click(object sender, RoutedEventArgs e)
+        {
+            //add function
+        }
+        */
     }
 
 }
