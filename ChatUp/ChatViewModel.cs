@@ -33,16 +33,21 @@ namespace ChatUp
             }
             set
             {
-                if(_chats == value)
+                if (_chats == value)
                 {
                     return;
                 }
                 _chats = value;
-                RaisePropertyChanged(ChatsPropertyName);
+                NotifyPropertyChanged(m => m.Chats);
             }
         }
-
-        private ICommand _connectButtonCommand; 
+        public ChatViewModel()
+        {
+            _chats = new ObservableCollection<ChatModel>();
+            ConnectButtonCommand = new RelayCommand(new Action<object>(ConnectButtonClick));
+            AddChatButtonCommand = new RelayCommand(new Action<object>(AddChatButtonClick));
+        }
+        private ICommand _connectButtonCommand;
         public ICommand ConnectButtonCommand
         {
             get
@@ -54,7 +59,7 @@ namespace ChatUp
                 _connectButtonCommand = value;
             }
         }
-        private ICommand _addChatButtonCommand; 
+        private ICommand _addChatButtonCommand;
         public ICommand AddChatButtonCommand
         {
             get
@@ -65,13 +70,6 @@ namespace ChatUp
             {
                 _addChatButtonCommand = value;
             }
-        }
-        
-        public ChatViewModel()
-        {
-            _chats = new ObservableCollection<ChatModel>();
-            ConnectButtonCommand = new RelayCommand(new Action<object>(ConnectButtonClick));
-            AddChatButtonCommand = new RelayCommand(new Action<object>(AddChatButtonClick));
         }
 
 

@@ -7,36 +7,28 @@ using System.ComponentModel;
 
 namespace ChatUp
 {
-    public class BaseINPC : INotifyPropertyChanged
+    public class BaseINPC<TResult> : INotifyPropertyChanged
     {
-
+        // Allows you to specify a lambda for notify property changed
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void RaisePropertyChanged(string propertyName)
+
+        // Defined as virtual so you can override if you wish
+        protected virtual void NotifyPropertyChanged<TResult>(Expression<Func<TModel, TResult>> property)
         {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
+            // Convert expression to a property name
+            string propertyName = ((MemberExpression)property.
+                Body).Member.Name;
+
+            // Fire notify property changed event
+            InternalNotifyPropertyChanged(propertyName);
         }
 
-        public int ID { get; set; }
-
-        private string name = String.Empty;
-
-        public string Name
+        protected void InternalNotifyPropertyChanged(string propertyName)
         {
-            get
+            if (PropertyChanged != null)
             {
-                return this.name;
-            }
-            set
-            {
-                if(value != this.name)
-                {
-                    this.name = value;
-                    RaisePropertyChanged("Name");
-                }
+                PropertyChanged(this,
+                    new PropertyChangedEventArgs(propertyName));
             }
         }
     }

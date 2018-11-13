@@ -21,31 +21,64 @@ namespace ChatUp
     public class ChatModel : BaseINPC
     {
         public Socket Socket { get; set; }
-        private string _epLocal;
-        public string epLocal
+        private string _localPort;
+        public string LocalPort
         {
-            get { return _epLocal; }
+            get { return _localPort; }
             set
             {
-                _epLocal = value;
-                RaisePropertyChanged("epLocal");
+                _localPort = value;
+                NotifyPropertyChanged(m => m.LocalPort);
             }
         }
-        public int epRemote { get; set; } //This should be EndPoint instead
-        public string localIP { get; set; }
-        public string remoteIP { get; set; }
-
-        byte[] _buffer; //this should maybe be in viewModel?
-
-        public string UserName { get; set; }
-
-        public ChatModel()
+        private string _remotePort;
+        public string RemotePort
         {
-            string ip = "127.0.0.1";
-            localIP = ip;//GetLocalIP();
-            epLocal = "1337";
-            epRemote = 1338;
-            remoteIP = ip; //GetLocalIP(); //This should be user input instead
+            get { return _remotePort; }
+            set
+            {
+                _remotePort = value;
+                NotifyPropertyChanged(m => m.RemotePort);
+            }
+        }
+        private string _localIP;
+        public string LocalIP
+        {
+            get { return _localIP; }
+            set
+            {
+                _localIP = value;
+                NotifyPropertyChanged(m => m.LocalIP);
+            }
+        }
+        private string _remoteIp;
+        public string RemoteIP
+        {
+            get { return _remoteIP; }
+            set
+            {
+                _remoteIP = value;
+                NotifyPropertyChanged(m => m.RemoteIP);
+            }
+        }
+
+        private string _userName;
+        public string UserName
+        {
+            get { return _userName; }
+            set
+            {
+                _usetName = value;
+                NotifyPropertyChanged(m => m.UserName);
+            }
+        }
+        public ChatModel()
+        {   
+            string ip = "127.0.0.1"; //localhost
+            LocalIP = ip;//GetLocalIP();
+            LocalPort = "1337";
+            RemotePort = "1338";
+            RemoteIP = ip; //GetLocalIP(); 
         }
 
 
@@ -59,7 +92,7 @@ namespace ChatUp
             //localIpText.Text = GetLocalIP();
             //remoteIpText.Text = GetLocalIP();
         }
-        
+
         private string GetLocalIP()
         {
             IPHostEntry host;

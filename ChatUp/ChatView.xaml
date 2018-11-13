@@ -30,7 +30,7 @@
                     <ColumnDefinition Width="4*"/>
                 </Grid.ColumnDefinitions>
                 <Label Content="IP:" Grid.Column="0" Foreground="White" />
-                <TextBox Name="txtLocalIP" Text="{Binding localIP}" Grid.Column="1" Foreground="White" Background="{x:Null}"/>
+                <TextBox Name="txtLocalIP" Text="{Binding LocalIP}" Grid.Column="1" Foreground="White" Background="{x:Null}"/>
                 </Grid>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -38,7 +38,7 @@
                     <ColumnDefinition Width="4*"/>
                 </Grid.ColumnDefinitions>
                 <Label Content="Port:" Grid.Column="0" Foreground="White" />
-                <TextBox Name="txtLocalPort" Text="{Binding epLocal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Foreground="White" Background="{x:Null}"/>
+                <TextBox Name="txtLocalPort" Text="{Binding LocalPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Foreground="White" Background="{x:Null}"/>
             </Grid>
             <Label Content="Stranger" Foreground="White" FontWeight="Bold"/>
             <Grid>
@@ -47,7 +47,7 @@
                     <ColumnDefinition Width="4*"/>
                 </Grid.ColumnDefinitions>
                 <Label Content="IP:" Grid.Column="0" Foreground="White" />
-                <TextBox Name="txtRemoteIP" Text="{Binding remoteIp}" Grid.Column="1" Foreground="White" Background="{x:Null}"/>
+                <TextBox Name="txtRemoteIP" Text="{Binding RemoteIp}" Grid.Column="1" Foreground="White" Background="{x:Null}"/>
             </Grid>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -55,7 +55,7 @@
                     <ColumnDefinition Width="4*"/>
                 </Grid.ColumnDefinitions>
                 <Label Content="Port:" Grid.Column="0" Foreground="White" />
-                <TextBox Name="txtRemotePort" Text="{Binding remotePort}" Grid.Column="1" Foreground="White" Background="{x:Null}"/>
+                <TextBox Name="txtRemotePort" Text="{Binding RemotePort}" Grid.Column="1" Foreground="White" Background="{x:Null}"/>
             </Grid>
         </StackPanel>
         <Button Name="btnConnect" CommandParameter="ConnectButton" Command="{Binding ConnectButtonCommand}" Grid.Column="0" Grid.Row="1" Content="Connect" Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
