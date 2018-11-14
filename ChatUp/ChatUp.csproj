@@ -76,6 +76,8 @@
   <ItemGroup>
     <Compile Include="ChatViewModel.cs" />
     <Compile Include="BaseINPC.cs" />
+    <Compile Include="Classes.cs" />
+    <Compile Include="Client.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

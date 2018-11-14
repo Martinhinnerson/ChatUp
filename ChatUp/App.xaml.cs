@@ -15,7 +15,7 @@ namespace ChatUp
     {
 
         //Another approach to bind the view and viewmodel
-        /*
+        
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -23,7 +23,7 @@ namespace ChatUp
             ChatViewModel VM = new ChatViewModel();
             window.DataContext = VM;
             window.Show();
-        }*/
+        }
 
         /*
         public App()
