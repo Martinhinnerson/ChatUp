@@ -16,7 +16,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace ChatUp
+namespace ChatApp
 {
     /// <summary>
     /// Interaction logic for ChatView.xaml
@@ -25,7 +25,7 @@ namespace ChatUp
     {
         public ChatView()
         {
-            //InitializeComponent();
+            InitializeComponent();
 
             const int contentWidth = 1000;
             const int contentHeight = 600;
@@ -37,9 +37,9 @@ namespace ChatUp
             Width = contentWidth + 2 * verticalBorderWidth;
             Height = contentHeight + captionHeight + 2 * horisontalBorderHeight;
 
-            //this.DataContext = new ChatViewModel(); // Bind the viewmodel to the view
+            this.DataContext = new ChatViewModel(); // Bind the viewmodel to the view
         }
-        
+
     }
 
 }

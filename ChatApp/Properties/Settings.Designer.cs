@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ChatUp.Properties
+namespace ChatApp.Properties
 {
 
 

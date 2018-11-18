@@ -1,0 +1,15 @@
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatApp.csprojAssemblyReference.cache
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatView.g.cs
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\App.g.cs
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatApp_MarkupCompile.cache
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatApp_MarkupCompile.lref
+C:\Users\Martin\source\repos\ChatApp\ChatApp\bin\Debug\ChatApp.exe.config
+C:\Users\Martin\source\repos\ChatApp\ChatApp\bin\Debug\ChatApp.exe
+C:\Users\Martin\source\repos\ChatApp\ChatApp\bin\Debug\ChatApp.pdb
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatView.baml
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatApp.g.resources
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatApp.Properties.Resources.resources
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatApp.csproj.GenerateResource.cache
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatApp.csproj.CoreCompileInputs.cache
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatApp.exe
+C:\Users\Martin\source\repos\ChatApp\ChatApp\obj\Debug\ChatApp.pdb
