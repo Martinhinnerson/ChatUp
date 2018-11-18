@@ -25,6 +25,8 @@ namespace ChatApp
 
         private bool _listenToClient = true;
 
+        public string Name;
+
         public int ID { get; set; } //client id used if we have multiple clients
 
         public delegate void internalReceivedMessageHandler(object sender, string msg);
