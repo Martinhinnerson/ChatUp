@@ -105,7 +105,7 @@ namespace ChatApp
             else
             {
                 //Right now we send to all clients and not only the selected one
-                Chat.Clients.ForEach(client => client.SendString(Chat.UserName + SendText));
+                Chat.Clients.ForEach(client => client.SendString(Chat.UserName + ": " + SendText));
                 //SendText = "";
             }
         }
