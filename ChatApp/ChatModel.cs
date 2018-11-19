@@ -77,8 +77,7 @@ namespace ChatApp
                 RaisePropertyChanged("UserName");
             }
         }
-
-
+        
         private int _numClients; // Store how many clients is connected
 
         public bool IsListening { get; set; } 
@@ -143,7 +142,17 @@ namespace ChatApp
                 RaisePropertyChanged("PopupMessage");
             }
         }
-        
+
+        private string _newConnectionName;
+        public string NewConnectionName
+        {
+            get { return _newConnectionName; }
+            set
+            {
+                _newConnectionName = value;
+                RaisePropertyChanged("NewConnectionName");
+            }
+        }
 
         /*
          * Constructor
@@ -160,12 +169,9 @@ namespace ChatApp
             RemotePort = 8888;
 
             UserName = System.Environment.MachineName;
-            //ID = DateTime.Now.Ticks;
 
             Clients = new List<Client>();
             
-
-            //StartChat();
         }
 
         /*
@@ -190,11 +196,16 @@ namespace ChatApp
                         if (listener.Pending())
                         {
                             Client client = new Client(listener.AcceptTcpClient(), _numClients);
-                            Console.WriteLine("Wait for popup...");
+                            client.internalReceivedMessage += ReceivedMessage; //subscribe to event
 
+                            client.ClientRemoved += client_ClientRemoved; //Add clientRemoved event
+
+                            Console.WriteLine("Wait for popup...");
+                            
                             PopupMessage = "New incoming connection on " + LocalIP + ":" + LocalPort;
+
                             ShowPopup = true;
-                            while (ShowPopup)
+                            while (ShowPopup) //wait for user to accept/decline new connection
                             {
                                 Thread.Sleep(100);
                             }
@@ -243,8 +254,10 @@ namespace ChatApp
              {
                  try
                  {
+                     Message msg = new Message(UserName);
                      TcpClient tcpclient = new TcpClient(RemoteIP, RemotePort);
                      Client client = new Client(tcpclient, _numClients);
+                     client.SendString(msg.GetNameMessage());
 
                      AddClient(client);
                  }
@@ -258,13 +271,14 @@ namespace ChatApp
 
         public void AddClient(Client client)
         {
-            client.internalReceivedMessage += ReceivedMessage; //subscribe to event
-
-            client.ClientRemoved += client_ClientRemoved; //Add clientRemoved event
+            client.Name = NewConnectionName;
 
             Clients.Add(client); //add client to client list
 
             SelectedClient = _numClients;
+
+            Message msg = new Message(UserName);
+            client.SendString(msg.GetNameMessage());
 
             Console.WriteLine("New client with id " + _numClients + " connected.");
 
@@ -299,7 +313,7 @@ namespace ChatApp
 
             if (id < _numClients) //if the client exists
             {
-                Clients[id].SendString(str);
+                Clients[id].SendMessage(str, UserName);
             }
             else
             {
@@ -330,8 +344,26 @@ namespace ChatApp
         private void ReceivedMessage(object sender, string str)
         {
             ReceivedMessageFromClient(sender, str);
+            
+            string[] splitStr = str.Split('|');
 
-            LastReceivedMessage = str;
+            if (splitStr.Length > 1)
+            {
+                if (splitStr[0].Equals("N"))
+                {
+                    NewConnectionName = splitStr[1];
+                }
+                else if(splitStr[0].Equals("M"))
+                {
+                    LastReceivedMessage = (sender as Client).Name + ": " + splitStr[1];
+                }
+            }
+            else
+            {
+                LastReceivedMessage = str;
+            }
+            
+            
         }
         
     }

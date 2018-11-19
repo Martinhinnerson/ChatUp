@@ -81,9 +81,10 @@
         </Grid>
         
 
-        <Popup Name="AcceptPopup" Grid.Column="1" IsOpen="{Binding Chat.ShowPopup}" StaysOpen="False" Placement="Center" Height="50">
+        <Popup Name="AcceptPopup" Grid.Column="1" IsOpen="{Binding Chat.ShowPopup}" StaysOpen="False" Placement="Center" Height="100">
             <StackPanel>
                 <TextBlock Text="{Binding Chat.PopupMessage}" Foreground="White" Background="Black" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Chat.NewConnectionName}" Foreground="White" Background="Black" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="1*"/>

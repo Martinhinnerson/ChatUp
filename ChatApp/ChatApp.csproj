@@ -76,6 +76,7 @@
     <Compile Include="ChatViewModel.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="HelpFunctions.cs" />
+    <Compile Include="Message.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

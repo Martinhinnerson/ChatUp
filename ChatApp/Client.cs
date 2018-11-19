@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.IO;
+using System.Collections.ObjectModel;
 
 namespace ChatApp
 {
@@ -28,6 +29,17 @@ namespace ChatApp
         public string Name;
 
         public int ID { get; set; } //client id used if we have multiple clients
+
+        private ObservableCollection<Message> _conversation;
+        public ObservableCollection<Message> Conversation
+        {
+            get { return _conversation; }
+            set
+            {
+                _conversation = value;
+            }
+        }
+        
 
         public delegate void internalReceivedMessageHandler(object sender, string msg);
         public event internalReceivedMessageHandler internalReceivedMessage; //event used to pass the received data to the server
@@ -87,6 +99,11 @@ namespace ChatApp
                 {
                     Console.WriteLine("Trying to read from disposed client with id {0}", ID);
                 }
+                catch (NullReferenceException nre)
+                {
+                    Console.WriteLine("Error: null i Client.listen");
+                    Console.WriteLine(nre);
+                }
                 Thread.Sleep(500); //sleep thread for a while
             }
             return;
@@ -113,5 +130,15 @@ namespace ChatApp
             _writer.WriteLine(str);//send the string
             _writer.Flush(); //Clear the buffer
         }
+
+
+        public void SendMessage(string str, string name)
+        {
+            Console.WriteLine("Sending message to client with id " + ID);
+            Message msg = new Message(name, str);
+            _writer.WriteLine(msg.GetPrintableMessage());
+            _writer.Flush();
+        }
+
     }
 }
