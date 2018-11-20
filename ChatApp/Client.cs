@@ -12,12 +12,20 @@ using System.Collections.ObjectModel;
 namespace ChatApp
 {
 
-    /*
-     * This class handles all connected client
-     * When a client connects a new Client instance is created
-     */
+    /// <summary>
+    /// Class that represents each connected client
+    /// </summary>
     public class Client : BaseViewModel
     {
+        // =====================================================================
+        // Properties
+        // =====================================================================
+
+        /// <summary>
+        /// Stores the current TCPclient for the client
+        /// This is set everytime a new client is created and updated when we connect to the same client again
+        /// Runs the Connect function in the setter
+        /// </summary>
         private TcpClient _client;
         public TcpClient TCP_client
         {
@@ -28,13 +36,25 @@ namespace ChatApp
                 Connect(); //connect everytime the TCPclient is set
             }
         }
+        
+        /// <summary>
+        /// The stream writer of the client
+        /// </summary>
+        private StreamWriter _writer;
 
-        private StreamWriter _writer; //writer is used to write to the client
+        /// <summary>
+        /// The stream reader of the client
+        /// </summary>
+        private StreamReader _reader;
 
-        private StreamReader _reader; //reader is used to read from the client
-
+        /// <summary>
+        /// If we are listening on the tcpclient or not
+        /// </summary>
         private bool _listenToClient = true;
 
+        /// <summary>
+        /// If the tcpclient is connected
+        /// </summary>
         private bool _isConnected;
         public bool IsConnected
         {
@@ -46,9 +66,15 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// The name of the client
+        /// The name is returned Client.toString()
+        /// </summary>
         public string Name;
-        
 
+        /// <summary>
+        /// Collects received messages
+        /// </summary>
         private ObservableCollection<Message> _conversation;
         public ObservableCollection<Message> Conversation
         {
@@ -58,21 +84,19 @@ namespace ChatApp
                 _conversation = value;
             }
         }
-        
 
+        /// <summary>
+        /// Event for when a message is received
+        /// Subscribed to by ChatModel
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="msg"></param>
         public delegate void internalReceivedMessageHandler(object sender, string msg);
         public event internalReceivedMessageHandler internalReceivedMessage; //event used to pass the received data to the server
 
-
-        //Override so that the name will show in the GUI list
-        public override string ToString()
-        {
-            return Name;
-        }
-
-        /*
-         * Constructor
-         */
+        // =============================================================================
+        // Constructor
+        // =============================================================================
         public Client(TcpClient client)
         {
             IsConnected = false;
@@ -80,6 +104,22 @@ namespace ChatApp
             //Connect();
         }
 
+        // =============================================================================
+        // Member functions
+        // =============================================================================
+
+        /// <summary>
+        /// Ovveride so that toStrinf() returns the name of the client
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return Name;
+        }
+
+        /// <summary>
+        /// Connect the client and start listening
+        /// </summary>
         public void Connect()
         {
             _writer = new StreamWriter(_client.GetStream());
@@ -88,9 +128,9 @@ namespace ChatApp
             ThreadPool.QueueUserWorkItem(o => { Listen(_reader); });//new thread for the reader
         }
 
-        /*
-         * Remove the connection to the client
-         */
+        /// <summary>
+        /// Disconnect from the client and stop listening
+        /// </summary>
         public void Disconnect()
         {
             IsConnected = false;
@@ -102,10 +142,11 @@ namespace ChatApp
 
         }
 
-        /*
-         * Listen for incoming data from the client
-         * When data is received an event is fired to tell the main thread that we have received something
-         */
+        /// <summary>
+        /// Listen for incoming data from the client
+        /// When data is received an event is fired to tell the main thread that we have received something
+        /// </summary>
+        /// <param name="reader"></param>
         public void Listen(StreamReader reader)
         {
             while (_listenToClient)
@@ -127,7 +168,7 @@ namespace ChatApp
                     Console.WriteLine("Can't reach client with id {0}");
                     Disconnect();
                 }
-                catch(ObjectDisposedException ode)
+                catch (ObjectDisposedException ode)
                 {
                     Disconnect();
                     Console.WriteLine("Trying to read from disposed client with id {0}");
@@ -141,10 +182,11 @@ namespace ChatApp
             }
             return;
         }
-        
-        /*
-         * Send string to client
-         */
+
+        /// <summary>
+        /// Send a string to the client if we are connected
+        /// </summary>
+        /// <param name="str"></param>
         public void SendString(string str)
         {
             if (IsConnected)
@@ -155,7 +197,11 @@ namespace ChatApp
             }
         }
 
-
+        /// <summary>
+        /// Send a message to the client if we are connected
+        /// </summary>
+        /// <param name="str"></param>
+        /// <param name="name"></param>
         public void SendMessage(string str, string name)
         {
             if (IsConnected)

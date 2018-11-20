@@ -20,10 +20,24 @@ using System.IO;
 
 namespace ChatApp
 {
+    /// <summary>
+    /// The viewmodel connection the GUI to the Chat and clients
+    /// </summary>
     public class ChatViewModel : BaseViewModel
     {
+        // =====================================================================
+        // Properties
+        // =====================================================================
+        
+        /// <summary>
+        /// Chat instance handling the chats and clients
+        /// </summary>
+        /// <value></value>
         public ChatModel Chat { get; set; }
 
+        /// <summary>
+        /// Label bound to the invite button
+        /// </summary>
         private string _inviteButtonLabel;
         public string InviteButtonLabel
         {
@@ -35,6 +49,9 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Label bound to the listen button
+        /// </summary>
         private string _listenButtonLabel;
         public string ListenButtonLabel
         {
@@ -45,7 +62,10 @@ namespace ChatApp
                 RaisePropertyChanged("ListenButtonLabel");
             }
         }
-
+        
+        /// <summary>
+        /// Textfield entry variable bound to the textfield where text to be sent are written
+        /// </summary>
         private string _sendText;
         public string SendText
         {
@@ -57,6 +77,19 @@ namespace ChatApp
             }
         }
 
+        // =====================================================================
+        // Icommands for the buttons
+        // =====================================================================
+        public ICommand InviteButtonCommand { get; set; }
+        public ICommand ListenButtonCommand { get; set; }
+        public ICommand SendButtonCommand { get; set; }
+        public ICommand AcceptButtonCommand { get; set; }
+        public ICommand DeclineButtonCommand { get; set; }
+        public ICommand DisconnectClientCommand { get; set; }
+
+        // =====================================================================
+        // Constructor
+        // =====================================================================
         public ChatViewModel()
         {
             ListenButtonLabel = "Search for connection";
@@ -69,16 +102,18 @@ namespace ChatApp
             DeclineButtonCommand = new RelayCommand(new Action<object>(DeclineButtonClick));
             DisconnectClientCommand = new RelayCommand(new Action<object>(DisconnectClientClick));
 
-            Chat.AddressBusy += AddressAlreadyInUse; //subscribe to event for receiving messages
+            Chat.AddressBusy += AddressAlreadyInUse; //subscribe to event
 
         }
-        public ICommand InviteButtonCommand { get; set; }
-        public ICommand ListenButtonCommand { get; set; }
-        public ICommand SendButtonCommand { get; set; }
-        public ICommand AcceptButtonCommand { get; set; }
-        public ICommand DeclineButtonCommand { get; set; }
-        public ICommand DisconnectClientCommand { get; set; }
-
+        
+        // =====================================================================
+        // Member functions
+        // =====================================================================
+        
+        /// <summary>
+        /// Functin that runs when the listen button is clicked
+        /// </summary>
+        /// <param name="sender"></param>
         private void ListenButtonClick(object sender)
         {
             if (!Chat.IsNotListening)
@@ -92,12 +127,20 @@ namespace ChatApp
                 Chat.StartListening();
             }
         }
+
+        /// <summary>
+        /// Function that runs when the listen button is clicked
+        /// </summary>
+        /// <param name="sender"></param>
         private void InviteButtonClick(object sender)
         {
             Chat.Invite();
         }
 
-
+        /// <summary>
+        /// Function that runs when the send button is pressed
+        /// </summary>
+        /// <param name="sender"></param>
         private void SendButtonClick(object sender)
         {
             if (!Chat.Clients.Any()) //if there are no clients in the client list
@@ -113,17 +156,27 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Function that runs when the accept invite button is clicked
+        /// </summary>
+        /// <param name="sender"></param>
         private void AcceptButtonClick(object sender)
         {
             Chat.Accept = true;
             Chat.ShowPopup = false;
         }
+
+        /// <summary>
+        /// Function that runs when the decline invite button is clicked 
+        /// </summary>
+        /// <param name="sender"></param>
         private void DeclineButtonClick(object sender)
         {
             Chat.Accept = false;
             Chat.ShowPopup = false;
         }
 
+        // Function that runs when the disconnect client button is cliecked
         private void DisconnectClientClick(object sender)
         {
             Message msg = new Message(Chat.UserName);
@@ -131,6 +184,9 @@ namespace ChatApp
             Chat.DisconnectSelectedClient();
         }
 
+        /// <summary>
+        /// Function runs when the Chat.AddressBusy event is fired
+        /// </summary>
         private void AddressAlreadyInUse()
         {
             MessageBox.Show("Address is busy.\nTry to send and invite instead.");

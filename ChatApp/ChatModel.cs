@@ -20,9 +20,14 @@ using System.Windows.Threading;
 
 namespace ChatApp
 {
+    /// <summary>
+    /// Chat model containing most of the important functions and properties of the chat
+    /// </summary>
     public class ChatModel : BaseViewModel
     {
-
+        // =====================================================================
+        // Properties
+        // =====================================================================
         private int _localPort;
         public int LocalPort
         {
@@ -33,7 +38,6 @@ namespace ChatApp
                 RaisePropertyChanged("LocalPort");
             }
         }
-
         private int _remotePort;
         public int RemotePort
         {
@@ -44,7 +48,6 @@ namespace ChatApp
                 RaisePropertyChanged("RemotePort");
             }
         }
-
         private string _localIP;
         public string LocalIP
         {
@@ -55,7 +58,6 @@ namespace ChatApp
                 RaisePropertyChanged("LocalIP");
             }
         }
-
         private string _remoteIP;
         public string RemoteIP
         {
@@ -66,7 +68,6 @@ namespace ChatApp
                 RaisePropertyChanged("RemoteIP");
             }
         }
-
         private string _userName;
         public string UserName
         {
@@ -77,9 +78,15 @@ namespace ChatApp
                 RaisePropertyChanged("UserName");
             }
         }
-        
-        private int _numClients; // Store how many clients is connected
 
+        /// <summary>
+        /// If the client has been accepted or not
+        /// </summary>
+        /// <value></value>
+        public bool Accept { get; set; }
+        /// <summary>
+        /// if we are not listening for new connections
+        /// </summary>
         private bool _isNotListening;
         public bool IsNotListening
         {
@@ -89,10 +96,12 @@ namespace ChatApp
                 _isNotListening = value;
                 RaisePropertyChanged("IsNotListening");
             }
-        } 
-        
-        public bool IsConnected { get; set; } //not used...
+        }
 
+        /// <summary>
+        /// List with all clients
+        /// This collection is bound to the GUI
+        /// </summary>
         private ObservableCollection<Client> _clients;//Store all connected clients
         public ObservableCollection<Client> Clients
         {
@@ -104,7 +113,11 @@ namespace ChatApp
             }
         }
 
-        private Client _selectedClient; //Which client are we looking at in the chat window
+        /// <summary>
+        /// The client currently selected in the GUI
+        /// TODO: this should probaly be a pointer instead.
+        /// </summary>
+        private Client _selectedClient;
         public Client SelectedClient
         {
             get { return _selectedClient; }
@@ -115,7 +128,11 @@ namespace ChatApp
             }
         }
 
-        private Client _newClient; 
+        /// <summary>
+        /// When a new client is connected it is instansiated here
+        /// If the connection is accepted this will be added to the clients list, otherwise ignored
+        /// </summary>
+        private Client _newClient;
         public Client NewClient
         {
             get { return _newClient; }
@@ -126,6 +143,10 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// The last message received
+        /// TODO: change this!
+        /// </summary>
         private string _lastReceivedMessage;
         public string LastReceivedMessage
         {
@@ -136,17 +157,25 @@ namespace ChatApp
                 RaisePropertyChanged("LastReceivedMessage");
             }
         }
-
+        /// <summary>
+        /// Event used by the view model
+        /// </summary>
         public delegate void AddresAlreadyInUse();
         public event AddresAlreadyInUse AddressBusy;
-
-        public bool Accept { get; set; }
-
-        //public bool WaitForName { get; set; }
-
+        /// <summary>
+        /// If we have to wait for an accept/decline message
+        /// </summary>
+        /// <returns></returns>
         public AutoResetEvent WaitForUser = new AutoResetEvent(false);
+        /// <summary>
+        /// Is true if the invite is accepted
+        /// </summary>
+        /// <value></value>
         public bool InviteAccepted { get; set; }
 
+        /// <summary>
+        /// If the popup window is shown or not
+        /// </summary>
         private bool _showPopup;
         public bool ShowPopup
         {
@@ -157,7 +186,9 @@ namespace ChatApp
                 RaisePropertyChanged("ShowPopup");
             }
         }
-
+        /// <summary>
+        /// The message shown in the popup window
+        /// </summary>
         private string _popupMessage;
         public string PopupMessage
         {
@@ -168,7 +199,9 @@ namespace ChatApp
                 RaisePropertyChanged("PopupMessage");
             }
         }
-
+        /// <summary>
+        /// The name of a new incoming connection
+        /// </summary>
         private string _newConnectionName;
         public string NewConnectionName
         {
@@ -179,8 +212,10 @@ namespace ChatApp
                 RaisePropertyChanged("NewConnectionName");
             }
         }
-
-        private string _status; 
+        /// <summary>
+        /// A status message bound to the GUI
+        /// </summary>
+        private string _status;
         public string Status
         {
             get { return _status; }
@@ -191,15 +226,14 @@ namespace ChatApp
             }
         }
 
-        /*
-         * Constructor
-         */
+        // =============================================================================
+        // Constructors
+        // =============================================================================
         public ChatModel()
         {
             ShowPopup = false;
             IsNotListening = true;
             IsConnected = false;
-           // WaitForName = true;
             InviteAccepted = false;
 
             LocalIP = "127.0.0.1";
@@ -212,9 +246,15 @@ namespace ChatApp
             Clients = new ObservableCollection<Client>();
         }
 
-        /*
-         * Start the chat connection 
-         */
+        // =====================================================================
+        // Member functions
+        // =====================================================================
+
+        /// <summary>
+        /// Listen for incoming connection invites
+        /// This function is run in its own thread
+        /// If a new connection is received, a popup will let you accept or deny
+        /// </summary>
         public void StartListening()
         {
             IsNotListening = false;
@@ -260,14 +300,14 @@ namespace ChatApp
                                 NewClient.SendString(msg.GetAcceptMessage());
                                 AddClient();
                             }
-                            
+
                         }
                         else
                         {
-                            Thread.Sleep(500); 
+                            Thread.Sleep(500);
                         }
                     }
-                    
+
                     return;//Exit the thread
 
                 }
@@ -282,7 +322,7 @@ namespace ChatApp
             });
 
         }
-        
+
         /*
          * Close the chat and remove all clients
          */
@@ -293,7 +333,10 @@ namespace ChatApp
             IsNotListening = true;
         }
 
-
+        /// <summary>
+        /// Invite the specified remote connection
+        /// If the invite is accepted, add it to Clients
+        /// </summary>
         public void Invite()
         {
             ThreadPool.QueueUserWorkItem(o =>
@@ -316,7 +359,7 @@ namespace ChatApp
                          Status = "Invite accepted.";
                          Console.WriteLine("Invite accepted.");
                          AddClient();
-                         
+
                      }
                      else
                      {
@@ -333,29 +376,33 @@ namespace ChatApp
                  {
                      Console.WriteLine("There is nobody listening on the remote address.");
                      Status = "There is nobody listening on the remote address.";
-            return;//exit thread
+                     return;//exit thread
                  }
              });
         }
-
+        /// <summary>
+        /// Add a new client
+        /// The function runs AddClientToList from the main thread because Clients can't be modified by another thread
+        /// </summary>
         public void AddClient()
         {
             NewClient.Name = NewConnectionName;
 
             //Clients.Add(client); //add client to client list
-            
-            Application.Current.Dispatcher.Invoke(new Action(() => AddClientToList())); 
-            
+
+            Application.Current.Dispatcher.Invoke(new Action(() => AddClientToList()));
+
             SelectedClient = NewClient;
 
             Message msg = new Message(UserName);
             NewClient.SendString(msg.GetNameMessage());
 
-            Console.WriteLine("New client with id " + _numClients + " connected.");
-
-            _numClients++; //increment the number of clients
         }
 
+        /// <summary>
+        /// Add the NewClient client to the client list
+        /// If a client with the same name already exists, connect to it instead with the new tcpClient
+        /// </summary>
         public void AddClientToList()
         {
             var client = Clients.FirstOrDefault(x => x.Name == NewClient.Name);
@@ -372,8 +419,10 @@ namespace ChatApp
             }
         }
 
-
-
+        /// <summary>
+        /// Remove the selected client from the client list
+        /// This will also disconnect it 
+        /// </summary>
         public void RemoveSelectedClient()
         {
             if (Clients.Any())
@@ -387,11 +436,18 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Helper function run by RemoveSelectedClient
+        /// This function is run from the main thread since it has to modify Clients
+        /// </summary>
         public void RemoveClientFromList()
         {
             Clients.Remove(SelectedClient);
         }
 
+        /// <summary>
+        /// Disconnect from the selected client
+        /// </summary>
         public void DisconnectSelectedClient()
         {
             if (Clients.Any())
@@ -404,6 +460,9 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Connect to the selected client
+        /// </summary>
         public void ConnectSelectedClient()
         {
             if (Clients.Any())
@@ -415,13 +474,16 @@ namespace ChatApp
                 Status = "There are no clients to connect";
             }
         }
-
+        /// <summary>
+        /// Send a string to the selected client
+        /// </summary>
+        /// <param name="msg">string to send</param>
         public void SendToSelectedClient(string msg)
         {
 
             if (Clients.Single(i => i.Name == SelectedClient.Name).IsConnected)
             {
-                Status = "Message sent to " + SelectedClient.Name; 
+                Status = "Message sent to " + SelectedClient.Name;
                 Clients.Single(i => i.Name == SelectedClient.Name).SendMessage(msg, UserName);
             }
             else
@@ -430,10 +492,11 @@ namespace ChatApp
             }
         }
 
-        
-        /*
-         * Received message event
-         */
+        /// <summary>
+        /// Function is called when a message has been received
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="str">The received string</param>
         private void ReceivedMessage(object sender, string str)
         {
 
@@ -468,10 +531,8 @@ namespace ChatApp
                     else if (splitStr[0].Equals("d"))
                     {
                         Console.WriteLine("Received disconnect");
-                        //MessageBox.Show("User " + splitStr[1] + " disconnected.");
                         Status = "User " + splitStr[1] + " disconnected.";
-                        Clients.Single(x => x.Name == splitStr[1]).Disconnect(); //look for exception here
-                        //RemoveSelectedClient();                        
+                        Clients.Single(x => x.Name == splitStr[1]).Disconnect(); //look for exception here             
                     }
                 }
                 else
@@ -484,9 +545,9 @@ namespace ChatApp
                 Console.WriteLine("Tried to remove item in list that does not exist");
                 Console.WriteLine(aoe);
             }
-            
+
         }
-        
+
     }
 }
 
