@@ -33,8 +33,20 @@ namespace ChatApp
 
         public string GetNameMessage()
         {
-
             return "N|" + Sender;
+        }
+
+        public string GetAcceptMessage()
+        {
+            return "A|" + Sender;
+        }
+        public string GetDeclineMessage()
+        {
+            return "D|" + Sender;
+        }
+        public string GetDisconnectMessage()
+        {
+            return "d|" + Sender;
         }
     }
 }

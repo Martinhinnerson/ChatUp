@@ -80,11 +80,21 @@ namespace ChatApp
         
         private int _numClients; // Store how many clients is connected
 
-        public bool IsListening { get; set; } 
-        public bool IsConnected { get; set; } 
+        private bool _isNotListening;
+        public bool IsNotListening
+        {
+            get { return _isNotListening; }
+            set
+            {
+                _isNotListening = value;
+                RaisePropertyChanged("IsNotListening");
+            }
+        } 
+        
+        public bool IsConnected { get; set; } //not used...
 
-        private List<Client> _clients;//Store all connected clients
-        public List<Client> Clients
+        private ObservableCollection<Client> _clients;//Store all connected clients
+        public ObservableCollection<Client> Clients
         {
             get { return _clients; }
             set
@@ -94,14 +104,25 @@ namespace ChatApp
             }
         }
 
-        private int _selectedClient; //Which client are we looking at in the chat window
-        public int SelectedClient
+        private Client _selectedClient; //Which client are we looking at in the chat window
+        public Client SelectedClient
         {
             get { return _selectedClient; }
             set
             {
                 _selectedClient = value;
                 RaisePropertyChanged("SelectedClient");
+            }
+        }
+
+        private Client _newClient; 
+        public Client NewClient
+        {
+            get { return _newClient; }
+            set
+            {
+                _newClient = value;
+                RaisePropertyChanged("NewClient");
             }
         }
 
@@ -116,10 +137,15 @@ namespace ChatApp
             }
         }
 
-        public delegate void ReceivedMessageHandler(object sender, string str);
-        public event ReceivedMessageHandler ReceivedMessageFromClient;
+        public delegate void AddresAlreadyInUse();
+        public event AddresAlreadyInUse AddressBusy;
 
         public bool Accept { get; set; }
+
+        //public bool WaitForName { get; set; }
+
+        public AutoResetEvent WaitForUser = new AutoResetEvent(false);
+        public bool InviteAccepted { get; set; }
 
         private bool _showPopup;
         public bool ShowPopup
@@ -154,14 +180,27 @@ namespace ChatApp
             }
         }
 
+        private string _status; 
+        public string Status
+        {
+            get { return _status; }
+            set
+            {
+                _status = value;
+                RaisePropertyChanged("Status");
+            }
+        }
+
         /*
          * Constructor
          */
         public ChatModel()
         {
             ShowPopup = false;
-            IsListening = false;
+            IsNotListening = true;
             IsConnected = false;
+           // WaitForName = true;
+            InviteAccepted = false;
 
             LocalIP = "127.0.0.1";
             RemoteIP = "127.0.0.1";
@@ -170,8 +209,7 @@ namespace ChatApp
 
             UserName = System.Environment.MachineName;
 
-            Clients = new List<Client>();
-            
+            Clients = new ObservableCollection<Client>();
         }
 
         /*
@@ -179,7 +217,7 @@ namespace ChatApp
          */
         public void StartListening()
         {
-            IsListening = true;
+            IsNotListening = false;
             ThreadPool.QueueUserWorkItem(o =>
             {
                 try
@@ -189,20 +227,17 @@ namespace ChatApp
 
                     listener.Start();
 
+                    Status = "Started listening for clients.";
                     Console.WriteLine("Started listening for clients.");
 
-                    while (IsListening)
+                    while (!IsNotListening)
                     {
                         if (listener.Pending())
                         {
-                            Client client = new Client(listener.AcceptTcpClient(), _numClients);
-                            client.internalReceivedMessage += ReceivedMessage; //subscribe to event
+                            NewClient = new Client(listener.AcceptTcpClient());
+                            NewClient.internalReceivedMessage += ReceivedMessage; //subscribe to event
 
-                            client.ClientRemoved += client_ClientRemoved; //Add clientRemoved event
-
-                            Console.WriteLine("Wait for popup...");
-                            
-                            PopupMessage = "New incoming connection on " + LocalIP + ":" + LocalPort;
+                            PopupMessage = "New incoming connection from: ";
 
                             ShowPopup = true;
                             while (ShowPopup) //wait for user to accept/decline new connection
@@ -210,43 +245,54 @@ namespace ChatApp
                                 Thread.Sleep(100);
                             }
 
-                            if (Accept)
+                            if (!Accept)   //Accept and immediately close
                             {
-                                //Accept incoming connection and create new client instance
-
-                                AddClient(client);
-                            }
-                            else
-                            {
-                                //Accept and immediately close
-                                client.RemoveClient();
+                                Message msg = new Message(UserName);
+                                NewClient.SendString(msg.GetDeclineMessage());
+                                NewClient.Disconnect();
+                                Status = "Client declined.";
                                 Console.WriteLine("Client declined.");
                             }
+                            else //Accept incoming connection and create new client instance
+                            {
+                                Status = "Client accepted";
+                                Message msg = new Message(UserName);
+                                NewClient.SendString(msg.GetAcceptMessage());
+                                AddClient();
+                            }
+                            
                         }
                         else
                         {
                             Thread.Sleep(500); 
                         }
                     }
-
-                    //Stop chat if we are here
-
-                    Clients.ForEach(client => client.RemoveClient()); // Disconnect all clients
-
-                    Clients.Clear(); //Clear the clients list
-
+                    
                     return;//Exit the thread
 
                 }
                 catch (SocketException se)
                 {
+                    Status = "This socket is already in use";
                     Console.WriteLine("This socket adress is already in use.");
+                    AddressBusy();
                     return; //exit thread
                 }
 
-            });//.Start();
+            });
 
         }
+        
+        /*
+         * Close the chat and remove all clients
+         */
+        public void StopListening()
+        {
+            Status = "Search stopped";
+            Console.WriteLine("Chat stopped.");
+            IsNotListening = true;
+        }
+
 
         public void Invite()
         {
@@ -256,113 +302,188 @@ namespace ChatApp
                  {
                      Message msg = new Message(UserName);
                      TcpClient tcpclient = new TcpClient(RemoteIP, RemotePort);
-                     Client client = new Client(tcpclient, _numClients);
-                     client.SendString(msg.GetNameMessage());
+                     NewClient = new Client(tcpclient);
 
-                     AddClient(client);
+                     NewClient.internalReceivedMessage += ReceivedMessage; //subscribe to event
+
+                     NewClient.SendString(msg.GetNameMessage());
+
+                     Console.WriteLine("Waiting for name...");
+                     WaitForUser.WaitOne();
+
+                     if (InviteAccepted)
+                     {
+                         Status = "Invite accepted.";
+                         Console.WriteLine("Invite accepted.");
+                         AddClient();
+                         
+                     }
+                     else
+                     {
+                         Status = "Invite declined";
+                         //remove client with sender name
+                         Clients.Remove(NewClient); //right now removes all duplicates
+                     }
+
+                     Console.WriteLine("Exiting invite.");
+                     InviteAccepted = false;
+                     return;
                  }
                  catch (SocketException se)
                  {
                      Console.WriteLine("There is nobody listening on the remote address.");
-                     return;//exit thread
+                     Status = "There is nobody listening on the remote address.";
+            return;//exit thread
                  }
              });
         }
 
-        public void AddClient(Client client)
+        public void AddClient()
         {
-            client.Name = NewConnectionName;
+            NewClient.Name = NewConnectionName;
 
-            Clients.Add(client); //add client to client list
-
-            SelectedClient = _numClients;
+            //Clients.Add(client); //add client to client list
+            
+            Application.Current.Dispatcher.Invoke(new Action(() => AddClientToList())); 
+            
+            SelectedClient = NewClient;
 
             Message msg = new Message(UserName);
-            client.SendString(msg.GetNameMessage());
+            NewClient.SendString(msg.GetNameMessage());
 
             Console.WriteLine("New client with id " + _numClients + " connected.");
 
             _numClients++; //increment the number of clients
         }
 
-
-        /*
-         * Close the chat and remove all clients
-         */
-        public void StopListening()
+        public void AddClientToList()
         {
-            Console.WriteLine("Chat stopped.");
-            IsListening = false;
-            Clients.ForEach(client => client.RemoveClient());//Disconnect all clients int Clients list
-            Clients.Clear();//empty the client list
-            
-        }
+            var client = Clients.FirstOrDefault(x => x.Name == NewClient.Name);
 
-        //Event to remove client
-        public void client_ClientRemoved(object sender, EventArgs e)
-        {
-            RemoveClientFromList((sender as Client).ID);
-        }
-
-        /*
-         * Send string to cliend with id
-         */
-        public void SendToClient(string str, int id)
-        {
-            //COMMENT - Should i check with if statement or with exceptions?
-
-            if (id < _numClients) //if the client exists
+            if (client == null) //there exists no client with the new name, add a new one
             {
-                Clients[id].SendMessage(str, UserName);
+                Status = "New client " + NewClient.Name + " connected";
+                Clients.Add(NewClient);
+            }
+            else //Client with that name already exists, update the TCP listener
+            {
+                Status = "Client already exist in client list, connecting.";
+                Clients.Single(x => x.Name == NewClient.Name).TCP_client = NewClient.TCP_client;
+            }
+        }
+
+
+
+        public void RemoveSelectedClient()
+        {
+            if (Clients.Any())
+            {
+                Application.Current.Dispatcher.Invoke(new Action(() => RemoveClientFromList()));
+                Clients.Remove(SelectedClient);
             }
             else
             {
-                Console.WriteLine("Trying to send string to client ID " + id + " which does not exist");
+                Status = "There are no clients connected";
             }
         }
 
-        /*
-         * Remove client from the client list
-         */
-        public void RemoveClientFromList(int id)
+        public void RemoveClientFromList()
         {
-            try
+            Clients.Remove(SelectedClient);
+        }
+
+        public void DisconnectSelectedClient()
+        {
+            if (Clients.Any())
             {
-                var clientToRemove = Clients.Single(r => r.ID == id);
-                Clients.Remove(clientToRemove);
-                Console.WriteLine("The client with id {0} was removed from the client list.", id);
+                Clients.Single(i => i.Name == SelectedClient.Name).Disconnect(); //look for exception here
             }
-            catch (InvalidOperationException)
+            else
             {
-                Console.WriteLine("Error, tried to remove a client that does not exist");
+                Status = "There are no clients to disconnect";
             }
         }
+
+        public void ConnectSelectedClient()
+        {
+            if (Clients.Any())
+            {
+                Clients.Single(i => i.Name == SelectedClient.Name).Connect(); //look for exception here
+            }
+            else
+            {
+                Status = "There are no clients to connect";
+            }
+        }
+
+        public void SendToSelectedClient(string msg)
+        {
+
+            if (Clients.Single(i => i.Name == SelectedClient.Name).IsConnected)
+            {
+                Status = "Message sent to " + SelectedClient.Name; 
+                Clients.Single(i => i.Name == SelectedClient.Name).SendMessage(msg, UserName);
+            }
+            else
+            {
+                Status = "Can't send, the client is not connected";
+            }
+        }
+
         
         /*
          * Received message event
          */
         private void ReceivedMessage(object sender, string str)
         {
-            ReceivedMessageFromClient(sender, str);
-            
-            string[] splitStr = str.Split('|');
 
-            if (splitStr.Length > 1)
+            try
             {
-                if (splitStr[0].Equals("N"))
+                string[] splitStr = str.Split('|');
+
+                if (splitStr.Length > 1)
                 {
-                    NewConnectionName = splitStr[1];
+                    if (splitStr[0].Equals("N"))
+                    {
+                        Console.WriteLine("Received name");
+                        NewConnectionName = splitStr[1];
+                    }
+                    else if (splitStr[0].Equals("M"))
+                    {
+                        LastReceivedMessage = (sender as Client).Name + ": " + splitStr[1];
+                    }
+                    else if (splitStr[0].Equals("A"))
+                    {
+                        Console.WriteLine("Received accept");
+                        NewConnectionName = splitStr[1];
+                        InviteAccepted = true;
+                        WaitForUser.Set();
+                    }
+                    else if (splitStr[0].Equals("D"))
+                    {
+                        Console.WriteLine("Received decline");
+                        InviteAccepted = false;
+                        WaitForUser.Set();
+                    }
+                    else if (splitStr[0].Equals("d"))
+                    {
+                        Console.WriteLine("Received disconnect");
+                        //MessageBox.Show("User " + splitStr[1] + " disconnected.");
+                        Status = "User " + splitStr[1] + " disconnected.";
+                        Clients.Single(x => x.Name == splitStr[1]).Disconnect(); //look for exception here
+                        //RemoveSelectedClient();                        
+                    }
                 }
-                else if(splitStr[0].Equals("M"))
+                else
                 {
-                    LastReceivedMessage = (sender as Client).Name + ": " + splitStr[1];
+                    LastReceivedMessage = str;
                 }
             }
-            else
+            catch (ArgumentOutOfRangeException aoe)
             {
-                LastReceivedMessage = str;
+                Console.WriteLine("Tried to remove item in list that does not exist");
+                Console.WriteLine(aoe);
             }
-            
             
         }
         

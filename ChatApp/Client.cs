@@ -16,9 +16,18 @@ namespace ChatApp
      * This class handles all connected client
      * When a client connects a new Client instance is created
      */
-    public class Client
+    public class Client : BaseViewModel
     {
         private TcpClient _client;
+        public TcpClient TCP_client
+        {
+            get { return _client; }
+            set
+            {
+                _client = value;
+                Connect(); //connect everytime the TCPclient is set
+            }
+        }
 
         private StreamWriter _writer; //writer is used to write to the client
 
@@ -26,9 +35,19 @@ namespace ChatApp
 
         private bool _listenToClient = true;
 
-        public string Name;
+        private bool _isConnected;
+        public bool IsConnected
+        {
+            get { return _isConnected; }
+            set
+            {
+                _isConnected = value;
+                RaisePropertyChanged("IsConnected");
+            }
+        }
 
-        public int ID { get; set; } //client id used if we have multiple clients
+        public string Name;
+        
 
         private ObservableCollection<Message> _conversation;
         public ObservableCollection<Message> Conversation
@@ -44,28 +63,43 @@ namespace ChatApp
         public delegate void internalReceivedMessageHandler(object sender, string msg);
         public event internalReceivedMessageHandler internalReceivedMessage; //event used to pass the received data to the server
 
-        protected virtual void OnClientRemoved(EventArgs e)
+
+        //Override so that the name will show in the GUI list
+        public override string ToString()
         {
-            EventHandler handler = ClientRemoved;
-            if(handler != null)
-            {
-                handler(this, e);
-            }
+            return Name;
         }
-        public event EventHandler ClientRemoved;
 
         /*
          * Constructor
          */
-        public Client(TcpClient client, int id)
+        public Client(TcpClient client)
         {
-            _client = client;
-            ID = id;
+            IsConnected = false;
+            TCP_client = client;
+            //Connect();
+        }
 
+        public void Connect()
+        {
             _writer = new StreamWriter(_client.GetStream());
             _reader = new StreamReader(_client.GetStream());
+            IsConnected = true;
+            ThreadPool.QueueUserWorkItem(o => { Listen(_reader); });//new thread for the reader
+        }
 
-            ThreadPool.QueueUserWorkItem(o => { Listen(_reader); });//.Start(); //new thread for the reader
+        /*
+         * Remove the connection to the client
+         */
+        public void Disconnect()
+        {
+            IsConnected = false;
+            Console.WriteLine("Client " + Name + "Disconnected");
+            _listenToClient = false;
+            _writer.Close();
+            _reader.Close();
+            //_client.Close();
+
         }
 
         /*
@@ -82,62 +116,55 @@ namespace ChatApp
 
                     if (input == null)
                     {
-                        Console.WriteLine("Client " + ID + " disconnected.");
-                        RemoveClient();
-                        return; //exit from the thread
+                        Console.WriteLine("Client " + Name + " disconnected.");
+                        Disconnect();
                     }
 
                     internalReceivedMessage(this, input);
                 }
                 catch (IOException ioe)
                 {
-                    Console.WriteLine("Can't reach client with id {0}", ID);
-                    OnClientRemoved(EventArgs.Empty);
-                    RemoveClient();
+                    Console.WriteLine("Can't reach client with id {0}");
+                    Disconnect();
                 }
                 catch(ObjectDisposedException ode)
                 {
-                    Console.WriteLine("Trying to read from disposed client with id {0}", ID);
+                    Disconnect();
+                    Console.WriteLine("Trying to read from disposed client with id {0}");
                 }
                 catch (NullReferenceException nre)
                 {
-                    Console.WriteLine("Error: null i Client.listen");
-                    Console.WriteLine(nre);
+                    Console.WriteLine("Error: null in Client.listen");
+                    //Console.WriteLine(nre);
                 }
                 Thread.Sleep(500); //sleep thread for a while
             }
             return;
         }
-
-        /*
-         * Remove the connection to the client
-         */
-        public void RemoveClient()
-        {
-            Console.WriteLine("Removing client with id " + ID);
-            _listenToClient = false;
-            _writer.Close();
-            _client.Close();
-
-        }
-
+        
         /*
          * Send string to client
          */
         public void SendString(string str)
         {
-            Console.WriteLine("Sending string to client with id " + ID);
-            _writer.WriteLine(str);//send the string
-            _writer.Flush(); //Clear the buffer
+            if (IsConnected)
+            {
+                //Console.WriteLine("Sending string to client with id " + ID);
+                _writer.WriteLine(str);//send the string
+                _writer.Flush(); //Clear the buffer
+            }
         }
 
 
         public void SendMessage(string str, string name)
         {
-            Console.WriteLine("Sending message to client with id " + ID);
-            Message msg = new Message(name, str);
-            _writer.WriteLine(msg.GetPrintableMessage());
-            _writer.Flush();
+            if (IsConnected)
+            {
+                //Console.WriteLine("Sending message to client with id " + ID);
+                Message msg = new Message(name, str);
+                _writer.WriteLine(msg.GetPrintableMessage());
+                _writer.Flush();
+            }
         }
 
     }

@@ -21,46 +21,54 @@
             <RowDefinition Height="10*"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,100,0,0">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="2*"/>
-                </Grid.ColumnDefinitions>
-                <ItemsControl Background="Transparent" Foreground="White" >
-                    <TextBlock Text="Username:" FontWeight="Bold"/>
-                    <TextBlock Text="Local" FontWeight="Bold"/>
-                    <TextBlock Text="Ip:" Foreground="White" />
-                    <TextBlock Text="Port:" Foreground="White" />
-                    <TextBlock Text="Remote" FontWeight="Bold" />
-                    <TextBlock Text="Ip:"  Foreground="White"/>
-                    <TextBlock Text="Port:" Foreground="White" />
-                </ItemsControl>
-                <ItemsControl Grid.Column="1" Background="Transparent" Foreground="White"  Margin="0,0,5,0">
-                    <TextBox Text="{Binding Chat.UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    <TextBlock Text="" Focusable="False" />
-                    <TextBox  Text="{Binding Chat.LocalIP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    <TextBox Text="{Binding Chat.LocalPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    <TextBlock Text="" Focusable="False"/>
-                    <TextBox Text="{Binding Chat.RemoteIP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    <TextBox Text="{Binding Chat.RemotePort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                </ItemsControl>
-            </Grid>
-            <TextBlock Text="Console:" Foreground="White" Background="Transparent" FontSize="14" FontWeight="Bold"/>
-            <ScrollViewer>
-                <TextBlock Text="no implemented..." Foreground="White" Background="Transparent"/>
-            </ScrollViewer>
-        </StackPanel>
+        <Grid Margin="0,100,0,0">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+                    <ItemsControl Background="Transparent" Foreground="White" >
+                        <TextBlock Text="Username:" FontWeight="Bold"/>
+                        <TextBlock Text="Local" FontWeight="Bold"/>
+                        <TextBlock Text="Ip:" Foreground="White" />
+                        <TextBlock Text="Port:" Foreground="White" />
+                        <TextBlock Text="Remote" FontWeight="Bold" />
+                        <TextBlock Text="Ip:"  Foreground="White"/>
+                        <TextBlock Text="Port:" Foreground="White" />
+                    </ItemsControl>
+                    <ItemsControl Grid.Column="1" Background="Transparent" Foreground="White"  Margin="0,0,5,0">
+                        <TextBox Text="{Binding Chat.UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text="" Focusable="False" />
+                        <TextBox  Text="{Binding Chat.LocalIP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Text="{Binding Chat.LocalPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="" Focusable="False"/>
+                        <TextBox Text="{Binding Chat.RemoteIP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Text="{Binding Chat.RemotePort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </ItemsControl>
+                </Grid>
+                <TextBlock Text="Connections:" Foreground="White" Background="Transparent" FontSize="14" FontWeight="Bold"/>
+                <ScrollViewer MaxHeight="100" Background="Transparent">
+                    <ListBox  ItemsSource="{Binding Chat.Clients, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding Chat.SelectedClient, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" Foreground="White"/>
+                </ScrollViewer>
+                <Button Name="btnDisconnectClient" CommandParameter="DisconnectClientButton" Command="{Binding DisconnectClientCommand}"  Content="Disconnect Client" Background="{x:Null}" Foreground="White"  BorderThickness="2"/>
+            </StackPanel>
+            <StackPanel VerticalAlignment="Bottom" Margin="0,0,0,10">
+                <Label Content="Status message:" FontWeight="Bold" Foreground="White" VerticalAlignment="Bottom" />
+                <TextBlock TextWrapping="Wrap" Text="{Binding Chat.Status}" Foreground="White" Margin="10, 0, 0, 0"/>
+            </StackPanel>
+        </Grid>
+
         <ScrollViewer Grid.Column="1" Margin="10, 10, 0, 10">
             <TextBlock Text="{Binding Chat.LastReceivedMessage}" Foreground="White" Background="Transparent" FontSize="16"/>
         </ScrollViewer>
         <Grid Grid.Column="0" Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
             <Button Name="btnListen" Grid.Column="0" CommandParameter="ListenButton" Command="{Binding ListenButtonCommand}"  Content="{Binding ListenButtonLabel}" Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
-            <Button Name="btnInvite" Grid.Column="1" CommandParameter="InviteButton" Command="{Binding InviteButtonCommand}"  Content="{Binding InviteButtonLabel}" Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
+            <Button Name="btnInvite" Grid.Column="1" CommandParameter="InviteButton" Command="{Binding InviteButtonCommand}"  Content="{Binding InviteButtonLabel}" IsEnabled="{Binding Chat.IsNotListening}"  Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
         </Grid>
         
         <Label Grid.Column="0" Content="ChatApp" Height="40" VerticalAlignment="Top" HorizontalAlignment="Center" Foreground="White" FontSize="20" FontWeight="Bold"/>

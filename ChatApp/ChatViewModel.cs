@@ -59,16 +59,17 @@ namespace ChatApp
 
         public ChatViewModel()
         {
-            ListenButtonLabel = "Listen Local";
-            InviteButtonLabel = "Invite Remote";
+            ListenButtonLabel = "Search for connection";
+            InviteButtonLabel = "Invite";
             Chat = new ChatModel();
             ListenButtonCommand = new RelayCommand(new Action<object>(ListenButtonClick));
             InviteButtonCommand = new RelayCommand(new Action<object>(InviteButtonClick));
             SendButtonCommand = new RelayCommand(new Action<object>(SendButtonClick));
             AcceptButtonCommand = new RelayCommand(new Action<object>(AcceptButtonClick));
             DeclineButtonCommand = new RelayCommand(new Action<object>(DeclineButtonClick));
+            DisconnectClientCommand = new RelayCommand(new Action<object>(DisconnectClientClick));
 
-            Chat.ReceivedMessageFromClient += ReceivedMessageFromClient; //subscribe to event for receiving messages
+            Chat.AddressBusy += AddressAlreadyInUse; //subscribe to event for receiving messages
 
         }
         public ICommand InviteButtonCommand { get; set; }
@@ -76,17 +77,18 @@ namespace ChatApp
         public ICommand SendButtonCommand { get; set; }
         public ICommand AcceptButtonCommand { get; set; }
         public ICommand DeclineButtonCommand { get; set; }
+        public ICommand DisconnectClientCommand { get; set; }
 
         private void ListenButtonClick(object sender)
         {
-            if (Chat.IsListening)
+            if (!Chat.IsNotListening)
             {
-                ListenButtonLabel = "Listen Local";
+                ListenButtonLabel = "Search for connection";
                 Chat.StopListening();
             }
             else
             {
-                ListenButtonLabel = "Disconnect";
+                ListenButtonLabel = "Stop searching";
                 Chat.StartListening();
             }
         }
@@ -100,12 +102,13 @@ namespace ChatApp
         {
             if (!Chat.Clients.Any()) //if there are no clients in the client list
             {
-                Console.WriteLine("There are no clients to send to.");
+                Chat.Status = "There are no clients connected";
+                Console.WriteLine("There are no clients connected");
             }
             else
             {
-                //Right now we send to all clients and not only the selected one
-                Chat.Clients.ForEach(client => client.SendMessage(SendText, Chat.UserName));
+                //Send to selected client
+                Chat.SendToSelectedClient(SendText);
                 SendText = "";
             }
         }
@@ -121,10 +124,18 @@ namespace ChatApp
             Chat.ShowPopup = false;
         }
 
-        private static void ReceivedMessageFromClient(object sender, string str)
+        private void DisconnectClientClick(object sender)
         {
-            Console.WriteLine("Received message from client {0}: {1}", (sender as Client).ID, str);
+            Message msg = new Message(Chat.UserName);
+            Chat.Clients.Single(i => i.Name == Chat.SelectedClient.Name).SendString(msg.GetDisconnectMessage());//Look for exception here
+            Chat.DisconnectSelectedClient();
         }
-        
+
+        private void AddressAlreadyInUse()
+        {
+            MessageBox.Show("Address is busy.\nTry to send and invite instead.");
+            ListenButtonLabel = "Search for connection";
+            Chat.StopListening();
+        }
     }
 }
