@@ -43,3 +43,8 @@ X:\Documents\ChatUp\ChatApp\obj\Debug\ChatApp.csproj.GenerateResource.cache
 X:\Documents\ChatUp\ChatApp\obj\Debug\ChatApp.csproj.CoreCompileInputs.cache
 X:\Documents\ChatUp\ChatApp\obj\Debug\ChatApp.exe
 X:\Documents\ChatUp\ChatApp\obj\Debug\ChatApp.pdb
+C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\obj\Debug\Page1.g.cs
+C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\obj\Debug\Page1.baml
+C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\bin\Debug\Newtonsoft.Json.xml
+C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\obj\Debug\ChatApp.csproj.CopyComplete

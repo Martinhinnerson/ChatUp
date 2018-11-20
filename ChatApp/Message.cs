@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace ChatApp
 {
@@ -16,7 +18,23 @@ namespace ChatApp
         // =====================================================================
         public string Sender { get; set; }
         public string Text { get; set; }
-        public DateTime SendTime { get; set; }
+        public string SendTime { get; set; }
+        //public JObject data { get; set; }
+        /*
+        public string json = @"{
+        'Name': 'Client',
+        'Time': '0',
+        'messages': [
+            {
+                'content': 'Json.NET 1.3 + New license + Now on CodePlex'
+                'time': 1
+            },
+            {
+                'content': 'LINQ to JSON beta',
+                'time': 0
+            }
+        ]
+        }";*/
 
         // =====================================================================
         // Constructors
@@ -25,19 +43,32 @@ namespace ChatApp
         {
             Sender = sender;
             Text = text;
-            SendTime = DateTime.Now;
+            SendTime = DateTime.Now.ToString();
+
         }
 
         public Message(string sender)
         {
             Sender = sender;
             Text = "";
-            SendTime = DateTime.Now;
+            SendTime = DateTime.Now.ToString();
+        }
+
+        public Message()
+        {
+            Sender = "";
+            Text = "";
+            SendTime = DateTime.Now.ToString();
         }
 
         // =====================================================================
         // Member functions
         // =====================================================================
+
+        public override string ToString()
+        {
+            return Sender + ": " + Text; 
+        }
 
         /// <summary>
         /// Returns a sendable message
@@ -45,7 +76,7 @@ namespace ChatApp
         /// <returns></returns>
         public string GetPrintableMessage()
         {
-            return "M|" + Text + "              (" + SendTime.ToString() + ")";
+            return "M|" + Text;
         }
 
         /// <summary>
@@ -83,5 +114,10 @@ namespace ChatApp
         {
             return "d|" + Sender;
         }
+
+        //public JObject GetJson()
+        //{
+        //    return JObject.Parse(json);
+        //}
     }
 }

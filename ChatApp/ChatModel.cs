@@ -17,6 +17,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Collections.ObjectModel;
 using System.Windows.Threading;
+using System.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace ChatApp
 {
@@ -68,6 +71,12 @@ namespace ChatApp
                 RaisePropertyChanged("RemoteIP");
             }
         }
+
+        /// <summary>
+        /// User name bound to the GUI
+        /// Currently you should not change name while having connections in your connections list
+        /// This can result in clients adding another instance of you which will cause weird things to happen...
+        /// </summary>
         private string _userName;
         public string UserName
         {
@@ -84,6 +93,7 @@ namespace ChatApp
         /// </summary>
         /// <value></value>
         public bool Accept { get; set; }
+
         /// <summary>
         /// if we are not listening for new connections
         /// </summary>
@@ -162,16 +172,20 @@ namespace ChatApp
         /// </summary>
         public delegate void AddresAlreadyInUse();
         public event AddresAlreadyInUse AddressBusy;
+
         /// <summary>
         /// If we have to wait for an accept/decline message
         /// </summary>
         /// <returns></returns>
         public AutoResetEvent WaitForUser = new AutoResetEvent(false);
+
+        public AutoResetEvent WaitForName = new AutoResetEvent(false);
+
         /// <summary>
         /// Is true if the invite is accepted
         /// </summary>
         /// <value></value>
-        public bool InviteAccepted { get; set; }
+        //public bool InviteAccepted { get; set; }
 
         /// <summary>
         /// If the popup window is shown or not
@@ -233,8 +247,7 @@ namespace ChatApp
         {
             ShowPopup = false;
             IsNotListening = true;
-            IsConnected = false;
-            InviteAccepted = false;
+            //InviteAccepted = false;
 
             LocalIP = "127.0.0.1";
             RemoteIP = "127.0.0.1";
@@ -244,6 +257,8 @@ namespace ChatApp
             UserName = System.Environment.MachineName;
 
             Clients = new ObservableCollection<Client>();
+
+            LoadConversations();
         }
 
         // =====================================================================
@@ -274,12 +289,20 @@ namespace ChatApp
                     {
                         if (listener.Pending())
                         {
-                            NewClient = new Client(listener.AcceptTcpClient());
-                            NewClient.internalReceivedMessage += ReceivedMessage; //subscribe to event
+                            NewClient = new Client();
+                            NewClient.TCP_client = listener.AcceptTcpClient();
+                            NewClient.Connect();
+                            Message msg = new Message(UserName);
 
-                            PopupMessage = "New incoming connection from: ";
+                            //Thread.Sleep(100);
 
+                            NewClient.SendString(msg.GetNameMessage());//send name message to new client
+                            
+                            Console.WriteLine("Waiting for name in listen");
+                            NewClient.NameReceived.WaitOne();
+                            PopupMessage = "New incoming connection from: " + NewClient.Name;
                             ShowPopup = true;
+
                             while (ShowPopup) //wait for user to accept/decline new connection
                             {
                                 Thread.Sleep(100);
@@ -287,7 +310,6 @@ namespace ChatApp
 
                             if (!Accept)   //Accept and immediately close
                             {
-                                Message msg = new Message(UserName);
                                 NewClient.SendString(msg.GetDeclineMessage());
                                 NewClient.Disconnect();
                                 Status = "Client declined.";
@@ -296,9 +318,8 @@ namespace ChatApp
                             else //Accept incoming connection and create new client instance
                             {
                                 Status = "Client accepted";
-                                Message msg = new Message(UserName);
                                 NewClient.SendString(msg.GetAcceptMessage());
-                                AddClient();
+                                Application.Current.Dispatcher.Invoke(new Action(() => AddClientToList()));
                             }
 
                         }
@@ -344,22 +365,23 @@ namespace ChatApp
                  try
                  {
                      Message msg = new Message(UserName);
-                     TcpClient tcpclient = new TcpClient(RemoteIP, RemotePort);
-                     NewClient = new Client(tcpclient);
+                     NewClient = new Client();
+                     NewClient.TCP_client = new TcpClient(RemoteIP, RemotePort);
+                     NewClient.Connect();
 
-                     NewClient.internalReceivedMessage += ReceivedMessage; //subscribe to event
+                     Console.WriteLine("Waiting for name...");
+                     NewClient.NameReceived.WaitOne();
 
                      NewClient.SendString(msg.GetNameMessage());
 
-                     Console.WriteLine("Waiting for name...");
-                     WaitForUser.WaitOne();
+                     Console.WriteLine("Waiting for accept...");
+                     NewClient.InviteAnswer.WaitOne();
 
-                     if (InviteAccepted)
+                     if (NewClient.InviteAccepted)
                      {
                          Status = "Invite accepted.";
                          Console.WriteLine("Invite accepted.");
-                         AddClient();
-
+                         Application.Current.Dispatcher.Invoke(new Action(() => AddClientToList()));
                      }
                      else
                      {
@@ -369,7 +391,7 @@ namespace ChatApp
                      }
 
                      Console.WriteLine("Exiting invite.");
-                     InviteAccepted = false;
+                     NewClient.InviteAccepted = false;
                      return;
                  }
                  catch (SocketException se)
@@ -379,24 +401,6 @@ namespace ChatApp
                      return;//exit thread
                  }
              });
-        }
-        /// <summary>
-        /// Add a new client
-        /// The function runs AddClientToList from the main thread because Clients can't be modified by another thread
-        /// </summary>
-        public void AddClient()
-        {
-            NewClient.Name = NewConnectionName;
-
-            //Clients.Add(client); //add client to client list
-
-            Application.Current.Dispatcher.Invoke(new Action(() => AddClientToList()));
-
-            SelectedClient = NewClient;
-
-            Message msg = new Message(UserName);
-            NewClient.SendString(msg.GetNameMessage());
-
         }
 
         /// <summary>
@@ -411,11 +415,14 @@ namespace ChatApp
             {
                 Status = "New client " + NewClient.Name + " connected";
                 Clients.Add(NewClient);
+                SelectedClient = NewClient;
+                NewClient.ClientDisconnected += ClientDisconnected;
             }
             else //Client with that name already exists, update the TCP listener
             {
                 Status = "Client already exist in client list, connecting.";
                 Clients.Single(x => x.Name == NewClient.Name).TCP_client = NewClient.TCP_client;
+                SelectedClient = Clients.Single(x => x.Name == NewClient.Name);
             }
         }
 
@@ -460,6 +467,11 @@ namespace ChatApp
             }
         }
 
+        public void ClientDisconnected(string name)
+        {
+            Status = "Client " + name + " disconnected";
+        }
+
         /// <summary>
         /// Connect to the selected client
         /// </summary>
@@ -492,62 +504,40 @@ namespace ChatApp
             }
         }
 
-        /// <summary>
-        /// Function is called when a message has been received
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="str">The received string</param>
-        private void ReceivedMessage(object sender, string str)
+        public void LoadConversations()
         {
+            string filepath = @"C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\bin\Debug\conversations.txt";
 
-            try
-            {
-                string[] splitStr = str.Split('|');
+            //JsonTextReader reader = new JsonTextReader(new StreamReader(filepath));
+            
+ 
 
-                if (splitStr.Length > 1)
-                {
-                    if (splitStr[0].Equals("N"))
-                    {
-                        Console.WriteLine("Received name");
-                        NewConnectionName = splitStr[1];
-                    }
-                    else if (splitStr[0].Equals("M"))
-                    {
-                        LastReceivedMessage = (sender as Client).Name + ": " + splitStr[1];
-                    }
-                    else if (splitStr[0].Equals("A"))
-                    {
-                        Console.WriteLine("Received accept");
-                        NewConnectionName = splitStr[1];
-                        InviteAccepted = true;
-                        WaitForUser.Set();
-                    }
-                    else if (splitStr[0].Equals("D"))
-                    {
-                        Console.WriteLine("Received decline");
-                        InviteAccepted = false;
-                        WaitForUser.Set();
-                    }
-                    else if (splitStr[0].Equals("d"))
-                    {
-                        Console.WriteLine("Received disconnect");
-                        Status = "User " + splitStr[1] + " disconnected.";
-                        Clients.Single(x => x.Name == splitStr[1]).Disconnect(); //look for exception here             
-                    }
-                }
-                else
-                {
-                    LastReceivedMessage = str;
-                }
-            }
-            catch (ArgumentOutOfRangeException aoe)
-            {
-                Console.WriteLine("Tried to remove item in list that does not exist");
-                Console.WriteLine(aoe);
-            }
+            //while (reader.Read())
+            //{
+
+            //    if (reader.Value != null)
+            //    {
+
+            //        Console.WriteLine("Token: {0}, Value: {1}", reader.TokenType, reader.Value);
+            //    }
+            //}
+
+            string json;
+            //using (StreamReader reader = new StreamReader(filepath))
+            //{
+            //    json = reader.ReadToEnd();
+            //}
+
+            StreamReader re = new StreamReader(filepath);
+            JsonTextReader reader = new JsonTextReader(re);
+            JsonSerializer serializer = new JsonSerializer();
+
+            //Console.WriteLine(json.ToString());
+            object input = serializer.Deserialize(reader);
+
+            Console.WriteLine(input.ToString());
 
         }
-
     }
 }
 

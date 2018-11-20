@@ -6,6 +6,15 @@
         xmlns:local="clr-namespace:ChatApp"
         mc:Ignorable="d"
         Title="ChatApp">
+
+    <Window.Resources>
+        <DataTemplate x:Key="ChatTemplate">
+            <ListBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding Chat.SelectedClient.Conversation}">
+                
+            </ListBox>
+        </DataTemplate>
+    </Window.Resources>
+    
     <Grid x:Name="LayoutRoot">
         <Grid.Background>
             <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -60,7 +69,7 @@
         </Grid>
 
         <ScrollViewer Grid.Column="1" Margin="10, 10, 0, 10">
-            <TextBlock Text="{Binding Chat.LastReceivedMessage}" Foreground="White" Background="Transparent" FontSize="16"/>
+            <ListBox ItemsSource="{Binding Chat.SelectedClient.Conversation}"  Background="Transparent" Foreground="White"/>
         </ScrollViewer>
         <Grid Grid.Column="0" Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -70,7 +79,7 @@
             <Button Name="btnListen" Grid.Column="0" CommandParameter="ListenButton" Command="{Binding ListenButtonCommand}"  Content="{Binding ListenButtonLabel}" Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
             <Button Name="btnInvite" Grid.Column="1" CommandParameter="InviteButton" Command="{Binding InviteButtonCommand}"  Content="{Binding InviteButtonLabel}" IsEnabled="{Binding Chat.IsNotListening}"  Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
         </Grid>
-        
+
         <Label Grid.Column="0" Content="ChatApp" Height="40" VerticalAlignment="Top" HorizontalAlignment="Center" Foreground="White" FontSize="20" FontWeight="Bold"/>
 
         <Grid Grid.Column="1" Grid.Row="1">
@@ -87,12 +96,13 @@
             <Button Grid.Column="1" Name="btnSend" Content="Send" Command="{Binding SendButtonCommand}" CommandParameter="SendButton" Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
 
         </Grid>
-        
 
-        <Popup Name="AcceptPopup" Grid.Column="1" IsOpen="{Binding Chat.ShowPopup}" StaysOpen="False" Placement="Center" Height="100">
-            <StackPanel>
+
+        <Popup Name="AcceptPopup" Grid.Column="1" IsOpen="{Binding Chat.ShowPopup}" StaysOpen="False" Placement="Center">
+            <Border BorderThickness="1" BorderBrush="White">
+            <StackPanel Margin="5">
                 <TextBlock Text="{Binding Chat.PopupMessage}" Foreground="White" Background="Black" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding Chat.NewConnectionName}" Foreground="White" Background="Black" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <!--" TextBlock Text="{Binding Chat.NewClient}" Foreground="White" Background="Black" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/-->
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="1*"/>
@@ -106,7 +116,11 @@
                     <Button Grid.Row="1" Grid.Column="1" Content="Decline" Command="{Binding DeclineButtonCommand}" Foreground="White" Background="Black"/>
                 </Grid>
             </StackPanel>
+            </Border>
         </Popup>
-        
+
     </Grid>
+
 </Window>
+
+

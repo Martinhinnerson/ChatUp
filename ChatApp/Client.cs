@@ -8,6 +8,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.IO;
 using System.Collections.ObjectModel;
+using System.Windows;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace ChatApp
 {
@@ -33,10 +36,11 @@ namespace ChatApp
             set
             {
                 _client = value;
-                Connect(); //connect everytime the TCPclient is set
+                //Connect(); //connect everytime the TCPclient is set
+                RaisePropertyChanged("NewClient");
             }
         }
-        
+
         /// <summary>
         /// The stream writer of the client
         /// </summary>
@@ -66,11 +70,13 @@ namespace ChatApp
             }
         }
 
+        public bool InviteAccepted { get; set; }
+
         /// <summary>
         /// The name of the client
         /// The name is returned Client.toString()
         /// </summary>
-        public string Name;
+        public string Name = "";
 
         /// <summary>
         /// Collects received messages
@@ -85,23 +91,31 @@ namespace ChatApp
             }
         }
 
-        /// <summary>
-        /// Event for when a message is received
-        /// Subscribed to by ChatModel
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="msg"></param>
-        public delegate void internalReceivedMessageHandler(object sender, string msg);
-        public event internalReceivedMessageHandler internalReceivedMessage; //event used to pass the received data to the server
+        public Message newMessage { get; set; }
+
+        public AutoResetEvent InviteAnswer = new AutoResetEvent(false);
+        public AutoResetEvent NameReceived = new AutoResetEvent(false);
+        public delegate void DisconnectEvent(string name);
+        public event DisconnectEvent ClientDisconnected;
 
         // =============================================================================
         // Constructor
         // =============================================================================
         public Client(TcpClient client)
         {
+            InviteAccepted = false;
             IsConnected = false;
             TCP_client = client;
-            //Connect();
+            Conversation = new ObservableCollection<Message>();
+        }
+
+        public Client()
+        {
+            InviteAccepted = false;
+            IsConnected = false;
+            TCP_client = null;
+            Conversation = new ObservableCollection<Message>();
+            StoreConversation();
         }
 
         // =============================================================================
@@ -161,24 +175,24 @@ namespace ChatApp
                         Disconnect();
                     }
 
-                    internalReceivedMessage(this, input);
+                    ReceivedMessage(input);
+
                 }
                 catch (IOException ioe)
                 {
-                    Console.WriteLine("Can't reach client with id {0}");
+                    Console.WriteLine(ioe);
                     Disconnect();
                 }
                 catch (ObjectDisposedException ode)
                 {
                     Disconnect();
-                    Console.WriteLine("Trying to read from disposed client with id {0}");
+                    Console.WriteLine(ode);
                 }
                 catch (NullReferenceException nre)
                 {
-                    Console.WriteLine("Error: null in Client.listen");
-                    //Console.WriteLine(nre);
+                    Console.WriteLine(nre);
                 }
-                Thread.Sleep(500); //sleep thread for a while
+                Thread.Sleep(100); //sleep thread for a while
             }
             return;
         }
@@ -213,5 +227,104 @@ namespace ChatApp
             }
         }
 
+        public void AddToConversation()
+        {
+            Conversation.Add(newMessage);
+        }
+
+
+        /// <summary>
+        /// Function is called when a message has been received
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="str">The received string</param>
+        private void ReceivedMessage(string str)
+        {
+
+            try
+            {
+                string[] splitStr = str.Split('|');
+
+                if (splitStr.Length > 1)
+                {
+                    if (splitStr[0].Equals("N"))
+                    {
+                        Console.WriteLine("Received name");
+                        Name = splitStr[1];
+                        NameReceived.Set();
+                    }
+                    else if (splitStr[0].Equals("M"))
+                    {
+                        AddMessage(splitStr[1]);
+                        StoreConversation();
+                    }
+                    else if (splitStr[0].Equals("A"))
+                    {
+                        Console.WriteLine("Received accept");
+                        InviteAccepted = true;
+                        InviteAnswer.Set();
+                    }
+                    else if (splitStr[0].Equals("D"))
+                    {
+                        Console.WriteLine("Received decline");
+                        InviteAccepted = false;
+                        InviteAnswer.Set();
+                    }
+                    else if (splitStr[0].Equals("d"))
+                    {
+                        Console.WriteLine("Received disconnect");
+                        ClientDisconnected(splitStr[1]);
+                        Disconnect(); //look for exception here             
+                    }
+                }
+                else
+                {
+                    Console.WriteLine(str);
+                }
+            }
+            catch (ArgumentOutOfRangeException aoe)
+            {
+                Console.WriteLine("Tried to remove item in list that does not exist");
+                Console.WriteLine(aoe);
+            }
+
+        }
+
+        public void AddMessage(string msg)
+        {
+            newMessage = new Message(Name, msg);
+            Application.Current.Dispatcher.Invoke(new Action(() => AddToConversation()));
+        }
+
+        public void StoreConversation()
+        {
+            //StringBuilder sb = new StringBuilder();
+            //StringWriter sw = new StringWriter(sb);
+
+
+            //using (JsonWriter writer = new JsonTextWriter(sw))
+            //{
+            //    foreach (var message in Conversation)
+            //    {
+            //        writer.Formatting = Formatting.Indented;
+
+            //        writer.WriteStartObject();
+            //        writer.WritePropertyName("Name");
+            //        writer.WriteValue(message.Sender);
+            //        writer.WritePropertyName("Time");
+            //        writer.WriteValue(message.SendTime);
+            //        writer.WritePropertyName("Text");
+            //        writer.WriteValue(message.Text);
+
+            //        writer.WriteEndObject();
+            //    }
+            //}
+
+            using (StreamWriter writer = File.CreateText(@"C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\bin\Debug\conversations.txt"))
+            {
+                JsonSerializer serializer = new JsonSerializer();
+                serializer.Serialize(writer, Conversation);
+            }
+        }
     }
 }
