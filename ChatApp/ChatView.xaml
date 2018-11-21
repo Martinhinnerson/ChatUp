@@ -86,13 +86,14 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="8*"/>
                 <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="2*"/>
             </Grid.ColumnDefinitions>
             <TextBox Text="{Binding SendText, Mode=TwoWay}"  Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="2" FontSize="16" MaxLines="10" TextWrapping="Wrap">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter" Command="{Binding SendButtonCommand}"/>
                 </TextBox.InputBindings>
             </TextBox>
-
+            <Button Grid.Column="2" Name="btnAddImg" Content="Send Image" Command="{Binding SendImageButtonCommand}" CommandParameter="SendImageButton" Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
             <Button Grid.Column="1" Name="btnSend" Content="Send" Command="{Binding SendButtonCommand}" CommandParameter="SendButton" Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
 
         </Grid>

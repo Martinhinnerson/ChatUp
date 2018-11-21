@@ -115,9 +115,17 @@ namespace ChatApp
             IsConnected = false;
             TCP_client = null;
             Conversation = new ObservableCollection<Message>();
-            StoreConversation();
+            //StoreConversation();
         }
-
+        public Client(string name)
+        {
+            InviteAccepted = false;
+            IsConnected = false;
+            TCP_client = null;
+            Name = name;
+            Conversation = new ObservableCollection<Message>();
+            //StoreConversation();
+        }
         // =============================================================================
         // Member functions
         // =============================================================================
@@ -136,10 +144,13 @@ namespace ChatApp
         /// </summary>
         public void Connect()
         {
-            _writer = new StreamWriter(_client.GetStream());
-            _reader = new StreamReader(_client.GetStream());
-            IsConnected = true;
-            ThreadPool.QueueUserWorkItem(o => { Listen(_reader); });//new thread for the reader
+            if (!IsConnected)
+            {
+                _writer = new StreamWriter(_client.GetStream());
+                _reader = new StreamReader(_client.GetStream());
+                IsConnected = true;
+                ThreadPool.QueueUserWorkItem(o => { Listen(_reader); });//new thread for the reader
+            }
         }
 
         /// <summary>
@@ -147,13 +158,16 @@ namespace ChatApp
         /// </summary>
         public void Disconnect()
         {
-            IsConnected = false;
-            Console.WriteLine("Client " + Name + "Disconnected");
-            _listenToClient = false;
-            _writer.Close();
-            _reader.Close();
-            //_client.Close();
-
+            if (IsConnected)
+            {
+                IsConnected = false;
+                Console.WriteLine("Client " + Name + "Disconnected");
+                _listenToClient = false;
+                _writer.Close();
+                _reader.Close();
+                //_client.Close();
+                //StoreConversation();
+            }
         }
 
         /// <summary>
@@ -227,6 +241,23 @@ namespace ChatApp
             }
         }
 
+        public void SendImage(byte[] img, string name)
+        {
+            if (IsConnected)
+            {
+                int size = img.Length;
+                
+                Message msg = new Message(name, img);
+            
+                _writer.WriteLine(msg.GetImageMessage());
+                _writer.Flush();
+
+                Thread.Sleep(100);
+                _writer.Write(msg.GetImage());
+            }
+        }
+
+
         public void AddToConversation()
         {
             Conversation.Add(newMessage);
@@ -240,7 +271,6 @@ namespace ChatApp
         /// <param name="str">The received string</param>
         private void ReceivedMessage(string str)
         {
-
             try
             {
                 string[] splitStr = str.Split('|');
@@ -298,32 +328,20 @@ namespace ChatApp
 
         public void StoreConversation()
         {
-            //StringBuilder sb = new StringBuilder();
-            //StringWriter sw = new StringWriter(sb);
-
-
-            //using (JsonWriter writer = new JsonTextWriter(sw))
-            //{
-            //    foreach (var message in Conversation)
-            //    {
-            //        writer.Formatting = Formatting.Indented;
-
-            //        writer.WriteStartObject();
-            //        writer.WritePropertyName("Name");
-            //        writer.WriteValue(message.Sender);
-            //        writer.WritePropertyName("Time");
-            //        writer.WriteValue(message.SendTime);
-            //        writer.WritePropertyName("Text");
-            //        writer.WriteValue(message.Text);
-
-            //        writer.WriteEndObject();
-            //    }
-            //}
-
-            using (StreamWriter writer = File.CreateText(@"C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\bin\Debug\conversations.txt"))
+            string filename = Name + ".JSON";
+            using (StreamWriter file = File.CreateText(@"C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\bin\Debug\Conversations\" + filename))
+            using (JsonTextWriter writer = new JsonTextWriter(file))
             {
                 JsonSerializer serializer = new JsonSerializer();
+                //string output = JsonConvert.SerializeObject(Conversation);
+
                 serializer.Serialize(writer, Conversation);
+
+                //writer.Write(output);
+
+                //Conversation.WriteTo(writer);
+                writer.Close();
+                file.Close();
             }
         }
     }

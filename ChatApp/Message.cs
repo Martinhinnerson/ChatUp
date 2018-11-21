@@ -19,23 +19,9 @@ namespace ChatApp
         public string Sender { get; set; }
         public string Text { get; set; }
         public string SendTime { get; set; }
-        //public JObject data { get; set; }
-        /*
-        public string json = @"{
-        'Name': 'Client',
-        'Time': '0',
-        'messages': [
-            {
-                'content': 'Json.NET 1.3 + New license + Now on CodePlex'
-                'time': 1
-            },
-            {
-                'content': 'LINQ to JSON beta',
-                'time': 0
-            }
-        ]
-        }";*/
-
+        public byte[] Image { get; set; }
+        //public JArray Messages { get; set; }
+        
         // =====================================================================
         // Constructors
         // =====================================================================
@@ -59,6 +45,18 @@ namespace ChatApp
             Sender = "";
             Text = "";
             SendTime = DateTime.Now.ToString();
+        }
+        public Message(string sender, string text, string st)
+        {
+            Sender = sender;
+            Text = text;
+            SendTime = st;
+        }
+
+        public Message(string sender, byte[] img)
+        {
+            Sender = sender;
+            Image = img;
         }
 
         // =====================================================================
@@ -119,5 +117,15 @@ namespace ChatApp
         //{
         //    return JObject.Parse(json);
         //}
+
+        public string GetImageMessage()
+        {
+            return "i|" + Sender;
+        }
+
+        public byte[] GetImage()
+        {
+            return Image;
+        }
     }
 }

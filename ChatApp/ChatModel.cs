@@ -418,11 +418,12 @@ namespace ChatApp
                 SelectedClient = NewClient;
                 NewClient.ClientDisconnected += ClientDisconnected;
             }
-            else //Client with that name already exists, update the TCP listener
+            else //Client with that name already exists, update the TCP listener and connect
             {
                 Status = "Client already exist in client list, connecting.";
                 Clients.Single(x => x.Name == NewClient.Name).TCP_client = NewClient.TCP_client;
-                SelectedClient = Clients.Single(x => x.Name == NewClient.Name);
+                SelectedClient = Clients.Single(x => x.Name == NewClient.Name); //TODO: check for exceptions here
+                SelectedClient.Connect();
             }
         }
 
@@ -504,38 +505,66 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Send an image to the selected client
+        /// </summary>
+        /// <param name="msg">string to send</param>
+        public void SendImageToSelectedClient(byte[] img)
+        {
+
+            if (Clients.Single(i => i.Name == SelectedClient.Name).IsConnected)
+            {
+                Status = "Image sent to " + SelectedClient.Name;
+                Clients.Single(i => i.Name == SelectedClient.Name).SendImage(img, UserName);
+            }
+            else
+            {
+                Status = "Can't send, the client is not connected";
+            }
+        }
+
         public void LoadConversations()
         {
-            string filepath = @"C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\bin\Debug\conversations.txt";
+            string folderpath = @"C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\bin\Debug\Conversations\";
 
-            //JsonTextReader reader = new JsonTextReader(new StreamReader(filepath));
-            
- 
+            foreach(string file in Directory.EnumerateFiles(folderpath, "*.JSON"))
+            {
+                try
+                {
+                    StreamReader re = new StreamReader(file);
+                    string input = re.ReadToEnd();
 
-            //while (reader.Read())
-            //{
+                    Console.WriteLine(input);
 
-            //    if (reader.Value != null)
-            //    {
+                    JArray output = JsonConvert.DeserializeObject<JArray>(input);
 
-            //        Console.WriteLine("Token: {0}, Value: {1}", reader.TokenType, reader.Value);
-            //    }
-            //}
 
-            string json;
-            //using (StreamReader reader = new StreamReader(filepath))
-            //{
-            //    json = reader.ReadToEnd();
-            //}
+                    string name = output[0]["Sender"].ToString();
+                    Console.WriteLine(name);
 
-            StreamReader re = new StreamReader(filepath);
-            JsonTextReader reader = new JsonTextReader(re);
-            JsonSerializer serializer = new JsonSerializer();
 
-            //Console.WriteLine(json.ToString());
-            object input = serializer.Deserialize(reader);
+                    Client client = new Client(name);
 
-            Console.WriteLine(input.ToString());
+                    foreach (var item in output.Children())
+                    {
+                        string s = item["Sender"].ToString();
+                        string st = item["SendTime"].ToString();
+                        string t = item["Text"].ToString();
+                        Message m = new Message(s, t, st);
+                        client.Conversation.Add(m);
+                    }
+
+                    Clients.Add(client);
+
+                    re.Close();
+                }
+                catch (Exception e) //TODO: change exception type
+                {
+                    Status = "Error loading client file: " + file.ToString();
+                    Console.WriteLine(e);
+                    continue;
+                }
+            }
 
         }
     }

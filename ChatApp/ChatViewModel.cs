@@ -17,6 +17,8 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Drawing;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace ChatApp
 {
@@ -83,6 +85,7 @@ namespace ChatApp
         public ICommand InviteButtonCommand { get; set; }
         public ICommand ListenButtonCommand { get; set; }
         public ICommand SendButtonCommand { get; set; }
+        public ICommand SendImageButtonCommand { get; set; }
         public ICommand AcceptButtonCommand { get; set; }
         public ICommand DeclineButtonCommand { get; set; }
         public ICommand DisconnectClientCommand { get; set; }
@@ -95,9 +98,11 @@ namespace ChatApp
             ListenButtonLabel = "Search for connection";
             InviteButtonLabel = "Invite";
             Chat = new ChatModel();
+
             ListenButtonCommand = new RelayCommand(new Action<object>(ListenButtonClick));
             InviteButtonCommand = new RelayCommand(new Action<object>(InviteButtonClick));
             SendButtonCommand = new RelayCommand(new Action<object>(SendButtonClick));
+            SendImageButtonCommand = new RelayCommand(new Action<object>(SendImageButtonClick));
             AcceptButtonCommand = new RelayCommand(new Action<object>(AcceptButtonClick));
             DeclineButtonCommand = new RelayCommand(new Action<object>(DeclineButtonClick));
             DisconnectClientCommand = new RelayCommand(new Action<object>(DisconnectClientClick));
@@ -153,6 +158,42 @@ namespace ChatApp
                 //Send to selected client
                 Chat.SendToSelectedClient(SendText);
                 SendText = "";
+            }
+        }
+
+        /// <summary>
+        /// Function that runs when the send image button is pressed
+        /// </summary>
+        /// <param name="sender"></param>
+        private void SendImageButtonClick(object sender)
+        {
+            //TODO: implement
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+
+            dlg.Filter = "JPG Files (*.jpg)|*.jpg|JPEG Files (*.jpeg)|*.jpeg|PNG Files (*.png)|*.png|GIF Files (*.gif)|*.gif";
+
+            Nullable<bool> result = dlg.ShowDialog();
+
+            if(result == true)
+            {
+                string filename = dlg.FileName;
+                Console.WriteLine(filename);
+                
+                Image image = new Image();
+                //image.Source =  new BitmapImage(new Uri(@filename));
+
+                byte[] byteImg;
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(new Uri(@filename)));
+                    encoder.Save(ms);
+                    byteImg = ms.ToArray();
+                }
+                Chat.SendImageToSelectedClient(byteImg);
+                
+
             }
         }
 
