@@ -156,6 +156,7 @@ namespace ChatApp
             else
             {
                 //Send to selected client
+                Console.WriteLine("test");
                 Chat.SendToSelectedClient(SendText);
                 SendText = "";
             }

@@ -57,6 +57,18 @@
                     </ItemsControl>
                 </Grid>
                 <TextBlock Text="Connections:" Foreground="White" Background="Transparent" FontSize="14" FontWeight="Bold"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="3*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Search:" Foreground="White" Background="Transparent" FontSize="12" FontWeight="Bold"/>
+                    <TextBox Text="{Binding SearchConnection, Mode=TwoWay}" Grid.Column="2"  Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="1" FontSize="12" MaxLines="10">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SearchButtonCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                </Grid>
                 <ScrollViewer MaxHeight="100" Background="Transparent">
                     <ListBox  ItemsSource="{Binding Chat.Clients, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding Chat.SelectedClient, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" Foreground="White"/>
                 </ScrollViewer>
@@ -88,7 +100,7 @@
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="2*"/>
             </Grid.ColumnDefinitions>
-            <TextBox Text="{Binding SendText, Mode=TwoWay}"  Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="2" FontSize="16" MaxLines="10" TextWrapping="Wrap">
+            <TextBox Text="{Binding SendText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="2" FontSize="16" MaxLines="10" TextWrapping="Wrap">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter" Command="{Binding SendButtonCommand}"/>
                 </TextBox.InputBindings>

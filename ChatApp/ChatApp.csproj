@@ -66,8 +66,6 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="AsyncClient.cs" />
-    <Compile Include="AsyncListener.cs" />
     <Compile Include="BaseViewModel.cs" />
     <Compile Include="ChatModel.cs" />
     <Compile Include="ChatView.xaml.cs">

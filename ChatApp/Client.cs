@@ -103,6 +103,7 @@ namespace ChatApp
         // =============================================================================
         public Client(TcpClient client)
         {
+            Console.WriteLine("client created");
             InviteAccepted = false;
             IsConnected = false;
             TCP_client = client;
@@ -111,6 +112,7 @@ namespace ChatApp
 
         public Client()
         {
+            Console.WriteLine("client created");
             InviteAccepted = false;
             IsConnected = false;
             TCP_client = null;
@@ -119,6 +121,7 @@ namespace ChatApp
         }
         public Client(string name)
         {
+            Console.WriteLine("client created");
             InviteAccepted = false;
             IsConnected = false;
             TCP_client = null;
@@ -189,6 +192,9 @@ namespace ChatApp
                         Disconnect();
                     }
 
+                    Console.WriteLine("message reveived");
+                    Console.WriteLine(input);
+                  
                     ReceivedMessage(input);
 
                 }
@@ -238,6 +244,7 @@ namespace ChatApp
                 Message msg = new Message(name, str);
                 _writer.WriteLine(msg.GetPrintableMessage());
                 _writer.Flush();
+                Console.WriteLine("In client send");
             }
         }
 
@@ -260,7 +267,10 @@ namespace ChatApp
 
         public void AddToConversation()
         {
+            Console.WriteLine(Conversation.Count);
             Conversation.Add(newMessage);
+            Console.WriteLine(newMessage);
+            Console.WriteLine(Conversation.Count);
         }
 
 
@@ -329,7 +339,7 @@ namespace ChatApp
         public void StoreConversation()
         {
             string filename = Name + ".JSON";
-            using (StreamWriter file = File.CreateText(@"C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\bin\Debug\Conversations\" + filename))
+            using (StreamWriter file = File.CreateText(Directory.GetCurrentDirectory() + @"\Conversations\" + filename))
             using (JsonTextWriter writer = new JsonTextWriter(file))
             {
                 JsonSerializer serializer = new JsonSerializer();

@@ -525,8 +525,8 @@ namespace ChatApp
 
         public void LoadConversations()
         {
-            string folderpath = @"C:\Users\Martin\Documents\TDDD49\ChatUp\ChatApp\bin\Debug\Conversations\";
-
+            string folderpath = Directory.GetCurrentDirectory() + @"\Conversations\"; 
+            Console.WriteLine(folderpath);
             foreach(string file in Directory.EnumerateFiles(folderpath, "*.JSON"))
             {
                 try
