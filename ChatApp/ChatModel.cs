@@ -124,6 +124,20 @@ namespace ChatApp
         }
 
         /// <summary>
+        /// This collections shows the filtered clients list if we are using the search function
+        /// </summary>
+        private ObservableCollection<Client> _filteredCliens;
+        public ObservableCollection<Client> FilteredClients
+        {
+            get {return _filteredCliens;}
+            set 
+            {
+                _filteredCliens = value;
+                RaisePropertyChanged("FilteredClients");
+            }
+        }
+
+        /// <summary>
         /// The client currently selected in the GUI
         /// TODO: this should probaly be a pointer instead.
         /// </summary>
@@ -179,6 +193,7 @@ namespace ChatApp
         /// <returns></returns>
         public AutoResetEvent WaitForUser = new AutoResetEvent(false);
 
+        //TODO: Change this name?
         public AutoResetEvent WaitForName = new AutoResetEvent(false);
 
         /// <summary>
@@ -240,6 +255,21 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// The search text field is bount to this
+        /// </summary>
+        private string _searchText;
+        public string SearchText
+        {
+            get { return _searchText; }
+            set
+            {
+                _searchText = value;
+                RaisePropertyChanged("SearchText");
+            }
+        }
+
+
         // =============================================================================
         // Constructors
         // =============================================================================
@@ -257,6 +287,7 @@ namespace ChatApp
             UserName = System.Environment.MachineName;
 
             Clients = new ObservableCollection<Client>();
+            FilteredClients = new ObservableCollection<Client>();
 
             LoadConversations();
         }
@@ -297,7 +328,7 @@ namespace ChatApp
                             //Thread.Sleep(100);
 
                             NewClient.SendString(msg.GetNameMessage());//send name message to new client
-                            
+
                             Console.WriteLine("Waiting for name in listen");
                             NewClient.NameReceived.WaitOne();
                             PopupMessage = "New incoming connection from: " + NewClient.Name;
@@ -344,9 +375,9 @@ namespace ChatApp
 
         }
 
-        /*
-         * Close the chat and remove all clients
-         */
+        /// <summary>
+        /// Close the chat and stop listening
+        /// </summary>
         public void StopListening()
         {
             Status = "Search stopped";
@@ -487,6 +518,7 @@ namespace ChatApp
                 Status = "There are no clients to connect";
             }
         }
+
         /// <summary>
         /// Send a string to the selected client
         /// </summary>
@@ -523,16 +555,35 @@ namespace ChatApp
             }
         }
 
+        public void FilterConnections()
+        {
+            if (!string.IsNullOrEmpty(SearchText)) //if the searchfield is not empty
+            {
+               FilteredClients = from client in Clients
+                   where client.Name == SearchText
+                   orderby client.Name
+                   select cli;
+
+                foreach(Client client in FilteredClients)
+                {
+                    Console.WriteLine(client.name);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Load the conversations from the Json files stored in the Conversations directory
+        /// </summary>
         public void LoadConversations()
         {
-            string folderpath = Directory.GetCurrentDirectory() + @"\Conversations\"; 
+            string folderpath = Directory.GetCurrentDirectory() + @"\Conversations\";
             Console.WriteLine(folderpath);
-            foreach(string file in Directory.EnumerateFiles(folderpath, "*.JSON"))
+            foreach (string file in Directory.EnumerateFiles(folderpath, "*.JSON"))
             {
                 try
                 {
-                    StreamReader re = new StreamReader(file);
-                    string input = re.ReadToEnd();
+                    StreamReader reader = new StreamReader(file);
+                    string input = reader.ReadToEnd();
 
                     Console.WriteLine(input);
 
@@ -540,8 +591,6 @@ namespace ChatApp
 
 
                     string name = output[0]["Sender"].ToString();
-                    Console.WriteLine(name);
-
 
                     Client client = new Client(name);
 
@@ -553,10 +602,9 @@ namespace ChatApp
                         Message m = new Message(s, t, st);
                         client.Conversation.Add(m);
                     }
-
                     Clients.Add(client);
 
-                    re.Close();
+                    reader.Close();
                 }
                 catch (Exception e) //TODO: change exception type
                 {
@@ -565,7 +613,6 @@ namespace ChatApp
                     continue;
                 }
             }
-
         }
     }
 }

@@ -27,7 +27,7 @@ namespace ChatApp
         {
             InitializeComponent();
 
-            const int contentWidth = 1000;
+            const int contentWidth = 800;
             const int contentHeight = 600;
 
             var horisontalBorderHeight = SystemParameters.ResizeFrameHorizontalBorderHeight;

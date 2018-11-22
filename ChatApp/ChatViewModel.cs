@@ -89,7 +89,8 @@ namespace ChatApp
         public ICommand AcceptButtonCommand { get; set; }
         public ICommand DeclineButtonCommand { get; set; }
         public ICommand DisconnectClientCommand { get; set; }
-
+        public ICommand SearchButtonCommand { get; set; }
+        
         // =====================================================================
         // Constructor
         // =====================================================================
@@ -106,6 +107,7 @@ namespace ChatApp
             AcceptButtonCommand = new RelayCommand(new Action<object>(AcceptButtonClick));
             DeclineButtonCommand = new RelayCommand(new Action<object>(DeclineButtonClick));
             DisconnectClientCommand = new RelayCommand(new Action<object>(DisconnectClientClick));
+            SearchButtonCommand = new RelayCommand(new Action<object>(SearchButtonClick));    
 
             Chat.AddressBusy += AddressAlreadyInUse; //subscribe to event
 
@@ -234,6 +236,11 @@ namespace ChatApp
             MessageBox.Show("Address is busy.\nTry to send and invite instead.");
             ListenButtonLabel = "Search for connection";
             Chat.StopListening();
+        }
+
+        private void SearchButtonClick()
+        {
+            Chat.FilterConnections();
         }
     }
 }

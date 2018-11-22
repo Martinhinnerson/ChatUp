@@ -63,9 +63,9 @@
                         <ColumnDefinition Width="3*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Search:" Foreground="White" Background="Transparent" FontSize="12" FontWeight="Bold"/>
-                    <TextBox Text="{Binding SearchConnection, Mode=TwoWay}" Grid.Column="2"  Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="1" FontSize="12" MaxLines="10">
+                    <TextBox Text="{Binding Chat:SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="2"  Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="1" FontSize="12" MaxLines="10">
                         <TextBox.InputBindings>
-                            <KeyBinding Key="Enter" Command="{Binding SearchButtonCommand}"/>
+                            <KeyBinding  Key="Enter" Command="{Binding SearchButtonCommand}"/>
                         </TextBox.InputBindings>
                     </TextBox>
                 </Grid>
