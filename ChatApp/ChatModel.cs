@@ -454,7 +454,9 @@ namespace ChatApp
         /// </summary>
         public void AddClientToList()
         {
-            try
+            var client = Clients.FirstOrDefault(x => x.Name == NewClient.Name);
+
+            if (client == null) //there exists no client with the new name, add a new one
             {
                 Status = "New client " + NewClient.Name + " connected";
                 Clients.Add(NewClient);
@@ -462,7 +464,7 @@ namespace ChatApp
                 SelectedClient = NewClient;
                 NewClient.ClientDisconnected += ClientDisconnected;
             }
-            catch(exception e)
+            else //Client with that name already exists, update the TCP listener and connect
             {
                 try
                 {
