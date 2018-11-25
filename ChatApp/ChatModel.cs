@@ -197,13 +197,7 @@ namespace ChatApp
         /// </summary>
         /// <returns></returns>
         public AutoResetEvent WaitForName = new AutoResetEvent(false);
-
-        /// <summary>
-        /// Is true if the invite is accepted
-        /// </summary>
-        /// <value></value>
-        //public bool InviteAccepted { get; set; }
-
+        
         /// <summary>
         /// If the popup window is shown or not
         /// </summary>
@@ -272,6 +266,9 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Boolean keeping track of if we are logged in or not
+        /// </summary>
         private bool _isNotLoggedIn;
         public bool IsNotLoggedIn
         {
@@ -324,11 +321,10 @@ namespace ChatApp
                     listener.Start();
 
                     Status = "Started listening for clients.";
-                    Console.WriteLine("Started listening for clients.");
 
                     while (!IsNotListening)
                     {
-                        if (listener.Pending())
+                        if (listener.Pending()) //If we have a new incoming connection
                         {
                             NewClient = new Client(UserName);
                             NewClient.MessageAdded += FilterConnections; //Subscribe to message added event
@@ -338,10 +334,11 @@ namespace ChatApp
 
                             NewClient.SendString(msg.GetNameMessage());//send name message to new client
 
-                            Console.WriteLine("Waiting for name in listen");
+                            //Wait for the new client to sent its name back
                             NewClient.NameReceived.WaitOne();
+
                             PopupMessage = "New incoming connection from: " + NewClient.Name;
-                            ShowPopup = true;
+                            ShowPopup = true; //show the popup with accept/decline
 
                             while (ShowPopup) //wait for user to accept/decline new connection
                             {
@@ -353,7 +350,6 @@ namespace ChatApp
                                 NewClient.SendString(msg.GetDeclineMessage());
                                 NewClient.Disconnect();
                                 Status = "Client declined.";
-                                Console.WriteLine("Client declined.");
                             }
                             else //Accept incoming connection and create new client instance
                             {
@@ -372,15 +368,11 @@ namespace ChatApp
                     return;//Exit the thread
 
                 }
-                catch (SocketException se)
+                catch (SocketException)
                 {
                     Status = "This socket is already in use";
                     Console.WriteLine("This socket adress is already in use.");
                     AddressBusy();
-                }
-                finally
-                {
-                    return;//exit thread
                 }
 
             });
@@ -388,12 +380,11 @@ namespace ChatApp
         }
 
         /// <summary>
-        /// Close the chat and stop listening
+        /// Stop listening for new connections
         /// </summary>
         public void StopListening()
         {
             Status = "Search stopped";
-            Console.WriteLine("Chat stopped.");
             IsNotListening = true;
         }
 
@@ -413,12 +404,12 @@ namespace ChatApp
                      NewClient.TCP_client = new TcpClient(RemoteIP, RemotePort);
                      NewClient.Connect();
 
-                     Console.WriteLine("Waiting for name...");
+                     //Wait for the invided adress to send back its name
                      NewClient.NameReceived.WaitOne();
                      
-                     NewClient.SendString(msg.GetNameMessage());
+                     NewClient.SendString(msg.GetNameMessage()); //send name
 
-                     Console.WriteLine("Waiting for accept...");
+                     //wait for the other part to accept or decline the invite
                      NewClient.InviteAnswer.WaitOne();
                      
                      if (NewClient.InviteAccepted)
@@ -433,17 +424,15 @@ namespace ChatApp
                          NewClient = null;
                      }
                      
-                     NewClient.InviteAccepted = false;
-                     
                      return;
                  }
-                 catch (SocketException se)
+                 catch (SocketException)
                  {
                      Status = "There is nobody listening on the remote address.";
                  }
                  finally
                  {
-                     return; //exit thread
+                     NewClient.InviteAccepted = false;
                  }
              });
         }
@@ -460,7 +449,7 @@ namespace ChatApp
             {
                 Status = "New client " + NewClient.Name + " connected";
                 Clients.Add(NewClient);
-                NewClient.fixVisibleCollection();
+                NewClient.fixVisibleCollection();//Fix the visible collection according to the message collection
                 SelectedClient = NewClient;
                 NewClient.ClientDisconnected += ClientDisconnected;
             }
@@ -472,7 +461,7 @@ namespace ChatApp
                     NewClient.Conversation = Clients.Single(x => x.Name == NewClient.Name).Conversation;
                     Clients.Remove(Clients.Single(x => x.Name == NewClient.Name));
                     Clients.Add(NewClient);
-                    NewClient.fixVisibleCollection();
+                    NewClient.fixVisibleCollection();//Fix the vissible collection according the the message collection
                     SelectedClient = NewClient;
                     SelectedClient.Connect();
                 }
@@ -520,7 +509,7 @@ namespace ChatApp
             {
                 try
                 {
-                    Clients.Single(i => i.Name == SelectedClient.Name).Disconnect(); //look for exception here
+                    Clients.Single(i => i.Name == SelectedClient.Name).Disconnect(); 
                 }
                 catch (InvalidOperationException)
                 {
@@ -534,6 +523,10 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Update the status if we received a client disconnected event
+        /// </summary>
+        /// <param name="name"></param>
         public void ClientDisconnected(string name)
         {
             Status = "Client " + name + " disconnected";
@@ -548,7 +541,7 @@ namespace ChatApp
             {
                 try
                 {
-                    Clients.Single(i => i.Name == SelectedClient.Name).Connect(); //look for exception here
+                    Clients.Single(i => i.Name == SelectedClient.Name).Connect();
                 }
                 catch (InvalidOperationException)
                 {
@@ -619,6 +612,9 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Filter the connections list according the the search field
+        /// </summary>
         public void FilterConnections()
         {
             if (!string.IsNullOrEmpty(SearchText)) //if the searchfield is not empty
@@ -647,7 +643,6 @@ namespace ChatApp
         {
             string folderpath = Directory.GetCurrentDirectory() + @"\Conversations\";
             DirectoryInfo dir = new DirectoryInfo(Directory.GetCurrentDirectory() + @"\Conversations\");
-            //Console.WriteLine(folderpath);
             FileInfo[] files = dir.GetFiles("*.JSON");
             foreach (FileInfo file in files)
             {
@@ -683,12 +678,12 @@ namespace ChatApp
                     }
                     
                 }
-                catch (IndexOutOfRangeException ior)
+                catch (IndexOutOfRangeException)
                 {
                     Console.WriteLine("The read file {0} does not have correct naming format.", file.Name);
                     continue;
                 }
-                catch (JsonReaderException jre)
+                catch (JsonReaderException)
                 {
                     Console.WriteLine("The read file {0} does not have correct JSON formating", file.Name);
                     continue;
@@ -702,6 +697,9 @@ namespace ChatApp
             FilterConnections();
         }
         
+        /// <summary>
+        /// Call the store conversation for each client in the clients list
+        /// </summary>
         public void StoreConversations()
         {
             foreach(Client client in Clients)

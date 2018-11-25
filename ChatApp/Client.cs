@@ -100,8 +100,12 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// The conversation that is shown in the UI.
+        /// This collection is of type object so that it can hold both strings for the messages and images for the image messages
+        /// </summary>
         private ObservableCollection<object> _visibleConversation;
-        public ObservableCollection<Object> VisibleConversation
+        public ObservableCollection<object> VisibleConversation
         {
             get { return _visibleConversation; }
             set
@@ -110,6 +114,9 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// newMessage is used when sending and adding messages tot the Conversation
+        /// </summary>
         public Message newMessage { get; set; }
 
         /// <summary>
@@ -117,7 +124,7 @@ namespace ChatApp
         /// </summary>
         /// <returns></returns>
         public AutoResetEvent InviteAnswer = new AutoResetEvent(false);
-        
+
         /// <summary>
         /// Event that is set when we have received the new clients name in a NameMessage
         /// </summary>
@@ -170,8 +177,6 @@ namespace ChatApp
         ~Client()
         {
             Disconnect();
-            Conversation = null;
-            TCP_client = null;
         }
 
         // =============================================================================
@@ -213,9 +218,7 @@ namespace ChatApp
                 _listenToClient = false;
                 _writer.Close();
                 _reader.Close();
-                //_client.Close();
-                //StoreConversation();
-            } //TODO: add socket exception
+            } 
         }
 
         /// <summary>
@@ -237,25 +240,26 @@ namespace ChatApp
                         Disconnect();
                     }
 
-                   // Console.WriteLine("message reveived");
-                   // Console.WriteLine(input);
-                  
+                    // Console.WriteLine("message reveived");
+                    // Console.WriteLine(input);
+
                     ReceivedMessage(input);
 
                 }
-                catch (IOException ioe)
+                catch (IOException)
                 {
                     //Console.WriteLine(ioe);
                     Disconnect();
                 }
-                catch (ObjectDisposedException ode)
+                catch (ObjectDisposedException)
                 {
                     Disconnect();
                     //Console.WriteLine(ode);
                 }
-                catch (NullReferenceException nre)
+                catch (NullReferenceException)
                 {
-                    Console.WriteLine(nre);
+                    Console.WriteLine("Error in listen: the client has most likely disconnected");
+                    return;
                 }
                 Thread.Sleep(100); //sleep thread for a while
             }
@@ -268,11 +272,29 @@ namespace ChatApp
         /// <param name="str"></param>
         public void SendString(string str)
         {
-            if (IsConnected)
+            try
             {
-                //Console.WriteLine("Sending string to client with id " + ID);
-                _writer.WriteLine(str);//send the string
-                _writer.Flush(); //Clear the buffer
+                if (IsConnected)
+                {
+                    //Console.WriteLine("Sending string to client with id " + ID);
+                    _writer.WriteLine(str);//send the string
+                    _writer.Flush(); //Clear the buffer
+                }
+            }
+            catch (MessageException)
+            {
+                Console.WriteLine("Error, the message cannot contain the | characted");
+            }
+            catch (IOException)
+            {
+                Console.WriteLine("Something went wrong when string to the client");
+
+            }
+            catch (ObjectDisposedException)
+            {
+                Console.WriteLine("_writer is no more, reconnecting");
+                Disconnect();
+                Connect();
             }
         }
 
@@ -283,39 +305,72 @@ namespace ChatApp
         /// <param name="name"></param>
         public void SendMessage(string str, string name)
         {
-            if (IsConnected)
+            try
             {
-                //Console.WriteLine("Sending message to client with id " + ID);
-                newMessage = new Message(name, str);
-                AddToConversation();
-                
-                _writer.WriteLine(newMessage.GetPrintableMessage());
-                _writer.Flush();
+                if (IsConnected)
+                {
+                    //Console.WriteLine("Sending message to client with id " + ID);
+                    newMessage = new Message(name, str);
+                    AddToConversation();
+
+                    _writer.WriteLine(newMessage.GetPrintableMessage());
+                    _writer.Flush();
+                }
+            }
+            catch (MessageException)
+            {
+                Console.WriteLine("Error, the message cannot contain the | characted");
+            }
+            catch (IOException)
+            {
+                Console.WriteLine("Something went wrong when sending an image to the client");
+
+            }
+            catch (ObjectDisposedException)
+            {
+                Console.WriteLine("_writer is no more, reconnecting");
+                Disconnect();
+                Connect();
             }
         }
 
+        /// <summary>
+        /// Send an image to the client if we are connected
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="img"></param>
         public void SendImage(string name, string img)
         {
-            if (IsConnected)
+            try
             {
-                int size = img.Length;
-                
-                newMessage = new Message(name);
-                newMessage.Image = img;
+                if (IsConnected)
+                {
+                    int size = img.Length;
 
-                AddToConversation();
+                    newMessage = new Message(name);
+                    newMessage.Image = img;
 
-                _writer.WriteLine(newMessage.GetImageMessage());
-                _writer.Flush();
+                    AddToConversation();
 
-
-
-                //Thread.Sleep(100);
-                //_writer.Write(newMessage.GetImage());
+                    _writer.WriteLine(newMessage.GetImageMessage());
+                    _writer.Flush();
+                }
+            }
+            catch (MessageException)
+            {
+                Console.WriteLine("Error, the message cannot contain the | characted");
+            }
+            catch (IOException)
+            {
+                Console.WriteLine("Something went wrong when sending an image to the client");
+            }
+            catch (ObjectDisposedException)
+            {
+                Console.WriteLine("_writer is no more, reconnecting");
+                Disconnect();
+                Connect();
             }
         }
-
-
 
         /// <summary>
         /// Function is called when a message has been received
@@ -346,7 +401,7 @@ namespace ChatApp
                     //Accept message
                     else if (splitStr[0].Equals("A"))
                     {
-                       // Console.WriteLine("Received accept");
+                        // Console.WriteLine("Received accept");
                         InviteAccepted = true;
                         InviteAnswer.Set();
                     }
@@ -360,36 +415,42 @@ namespace ChatApp
                     //Disconnect message telling the clinet we are disconnecting
                     else if (splitStr[0].Equals("d"))
                     {
-                       // Console.WriteLine("Received disconnect");
+                        // Console.WriteLine("Received disconnect");
                         ClientDisconnected(splitStr[1]);
                         Disconnect(); //look for exception here             
                     }
                     else if (splitStr[0].Equals("I"))
                     {
-                        Console.WriteLine(str);
                         AddImage(splitStr[1]);
                     }
                 }
                 //All other messages are invalid
                 else
                 {
-                    Console.WriteLine(str);
+                    Console.WriteLine("Invalid message received: {0}", str);
                 }
             }
-            catch (ArgumentOutOfRangeException aoe)
+            catch (NullReferenceException)
             {
-                Console.WriteLine("Tried to remove item in list that does not exist");
-                Console.WriteLine(aoe);
+                Console.WriteLine("Error in received message: the client has most likely disconnected");
+                return;
             }
-
         }
 
+        /// <summary>
+        /// Calls AddToConversation with the message from the UI thread
+        /// </summary>
+        /// <param name="msg"></param>
         public void AddMessage(string msg)
         {
             newMessage = new Message(Name, msg);
             Application.Current.Dispatcher.Invoke(new Action(() => AddToConversation()));
         }
 
+        /// <summary>
+        /// Calls AddToConversation with the image from the UI thres
+        /// </summary>
+        /// <param name="img"></param>
         public void AddImage(string img)
         {
             newMessage = new Message(Name);
@@ -397,6 +458,9 @@ namespace ChatApp
             Application.Current.Dispatcher.Invoke(new Action(() => AddToConversation()));
         }
 
+        /// <summary>
+        /// Add the message or image stored in newMessage to the conversations list
+        /// </summary>
         public void AddToConversation()
         {
             Conversation.Add(newMessage);
@@ -405,11 +469,13 @@ namespace ChatApp
             MessageAdded.Invoke();
         }
 
-
+        /// <summary>
+        /// Convert the conversation list to JSON format and store it in file
+        /// </summary>
         public void StoreConversation()
         {
             string filename = Name + ".JSON";
-            using (StreamWriter file = File.CreateText(Directory.GetCurrentDirectory() + @"\Conversations\" + _username + ','+ filename))
+            using (StreamWriter file = File.CreateText(Directory.GetCurrentDirectory() + @"\Conversations\" + _username + ',' + filename))
             using (JsonTextWriter writer = new JsonTextWriter(file))
             {
                 JsonSerializer serializer = new JsonSerializer();
@@ -419,13 +485,17 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Fixes the visible collection so that it shows whats in the conversations list.
+        /// For example it adds image objects if the message is an image and otherwire it adds a string
+        /// </summary>
         public void fixVisibleCollection()
         {
             VisibleConversation.Clear();
-            foreach(Message m in Conversation)
+            foreach (Message m in Conversation)
             {
                 string name = m.Sender;
-                if(m.Image == null || m.Image == "")
+                if (m.Image == null || m.Image == "")
                 {
                     VisibleConversation.Add(m.ToString());
                 }
@@ -436,19 +506,32 @@ namespace ChatApp
                     VisibleConversation.Add(name + ": ");
                     VisibleConversation.Add(img);
                 }
-            }//TODO: Add exception
+            }
         }
 
+        /// <summary>
+        /// Help function to convert the base64 string stored in the Message is converted into an image object
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
         public Image Base64ToImage(string str)
         {
-            byte[] byteImg = Convert.FromBase64String(str);
-            
-            Image img = new Image();
-            using (MemoryStream ms = new MemoryStream(byteImg, 0, byteImg.Length))
+            try
             {
-                img.Source = BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                byte[] byteImg = Convert.FromBase64String(str);
+
+                Image img = new Image();
+                using (MemoryStream ms = new MemoryStream(byteImg, 0, byteImg.Length))
+                {
+                    img.Source = BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                }
+                return img;
             }
-            return img;
+            catch (FormatException)
+            {
+                Console.WriteLine("Error, a base64 image could not be converted to a byte[]. Wrong base64 string format");
+                return null;
+            }
         }
     }
 }

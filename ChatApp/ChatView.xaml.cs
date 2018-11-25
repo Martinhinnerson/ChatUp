@@ -27,6 +27,7 @@ namespace ChatApp
         {
             InitializeComponent();
 
+            //Set the size of the main window
             const int contentWidth = 800;
             const int contentHeight = 600;
 

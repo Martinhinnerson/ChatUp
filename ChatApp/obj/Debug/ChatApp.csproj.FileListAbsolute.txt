@@ -71,5 +71,3 @@ C:\Users\Martin\Documents\TDDD49\TDDD49\ChatApp\obj\Debug\ChatApp.Properties.Res
 C:\Users\Martin\Documents\TDDD49\TDDD49\ChatApp\obj\Debug\ChatApp.csproj.GenerateResource.cache
 C:\Users\Martin\Documents\TDDD49\TDDD49\ChatApp\obj\Debug\ChatApp.csproj.CoreCompileInputs.cache
 C:\Users\Martin\Documents\TDDD49\TDDD49\ChatApp\obj\Debug\ChatApp.csproj.CopyComplete
-C:\Users\Martin\Documents\TDDD49\TDDD49\ChatApp\obj\Debug\LoginView.g.cs
-C:\Users\Martin\Documents\TDDD49\TDDD49\ChatApp\obj\Debug\LoginView.baml

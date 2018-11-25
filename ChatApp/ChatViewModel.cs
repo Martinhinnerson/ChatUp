@@ -81,7 +81,7 @@ namespace ChatApp
         }
         
         // =====================================================================
-        // Icommands for the buttons
+        // ICommands for the buttons
         // =====================================================================
         public ICommand InviteButtonCommand { get; set; }
         public ICommand ListenButtonCommand { get; set; }
@@ -118,14 +118,16 @@ namespace ChatApp
         // Member functions
         // =====================================================================
 
-
+        /// <summary>
+        /// This functions is called after the user has selected a username
+        /// </summary>
+        /// <param name="sender"></param>
         private void Login(object sender)
         {
             Chat.IsNotLoggedIn = false;
             Chat.LoadConversations();
         }
-
-
+        
         /// <summary>
         /// Functin that runs when the listen button is clicked
         /// </summary>
@@ -167,7 +169,6 @@ namespace ChatApp
             else
             {
                 //Send to selected client
-                Console.WriteLine("test");
                 Chat.SendToSelectedClient(SendText);
                 SendText = "";
             }
@@ -186,29 +187,34 @@ namespace ChatApp
 
             Nullable<bool> result = dlg.ShowDialog();
 
-            if(result == true)
+            string filename = dlg.FileName;
+
+            if (result == true)
             {
-                string filename = dlg.FileName;
-                Console.WriteLine(filename);
-                
-                Image image = new Image();
-
-                image.Source = new BitmapImage(new Uri(@filename));
-
-                byte[] byteImg;
-
-                using (MemoryStream ms = new MemoryStream())
+                try
                 {
-                    JpegBitmapEncoder encoder = new JpegBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(new Uri(@filename)));
-                    encoder.Save(ms);
-                    byteImg = ms.ToArray();
+                    Image image = new Image();
+
+                    image.Source = new BitmapImage(new Uri(@filename));
+
+                    byte[] byteImg;
+
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+                        encoder.Frames.Add(BitmapFrame.Create(new Uri(@filename)));
+                        encoder.Save(ms);
+                        byteImg = ms.ToArray();
+                    }
+
+                    string imageStr = Convert.ToBase64String(byteImg);
+
+                    Chat.SendImageToSelectedClient(imageStr);
                 }
-                
-                string imageStr = Convert.ToBase64String(byteImg);
-
-                Chat.SendImageToSelectedClient(imageStr);
-
+                catch (FileNotFoundException)
+                {
+                    MessageBox.Show("The file " + filename + " could not be loaded: File not found");
+                }
             }
         }
 
@@ -232,18 +238,37 @@ namespace ChatApp
             Chat.ShowPopup = false;
         }
 
-        // Function that runs when the disconnect client button is cliecked
+        /// <summary>
+        /// Function that runs when the disconnect client button is cliecked
+        /// </summary>
+        /// <param name="sender"></param>
         private void DisconnectClientClick(object sender)
         {
-            Message msg = new Message(Chat.UserName);
-            Chat.Clients.Single(i => i.Name == Chat.SelectedClient.Name).SendString(msg.GetDisconnectMessage());//Look for exception here
-            Chat.DisconnectSelectedClient();
+            try
+            {
+                Message msg = new Message(Chat.UserName);
+                Chat.Clients.Single(i => i.Name == Chat.SelectedClient.Name).SendString(msg.GetDisconnectMessage());//Look for exception here
+                Chat.DisconnectSelectedClient();
+            }
+            catch (ArgumentNullException)
+            {
+                Console.WriteLine("The selected client is not in the clients list?");
+            }
         }
+
+        /// <summary>
+        /// Filters the connections list when the search event is activated
+        /// </summary>
+        /// <param name="sender"></param>
         private void SearchClick(object sender)
         {
             Chat.FilterConnections();
         }
 
+        /// <summary>
+        /// Store all conversations of the clients into files
+        /// </summary>
+        /// <param name="sender"></param>
         private void StoreConversations(object sender)
         {
             Chat.StoreConversations();

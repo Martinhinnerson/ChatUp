@@ -20,12 +20,16 @@ namespace ChatApp
         public string Text { get; set; }
         public string SendTime { get; set; }
         public string Image { get; set; }
-        
+
         // =====================================================================
         // Constructors
         // =====================================================================
         public Message(string sender, string text)
         {
+            if (sender.Contains("|") || text.Contains("|"))
+            {
+                throw new MessageException("The sender or text cannot contain a | character");
+            }
             Sender = sender;
             Text = text;
             SendTime = DateTime.Now.ToString();
@@ -34,21 +38,22 @@ namespace ChatApp
 
         public Message(string sender)
         {
+            if (sender.Contains("|"))
+            {
+                throw new MessageException("The sender or text cannot contain a | character");
+            }
             Sender = sender;
             Text = "";
             SendTime = DateTime.Now.ToString();
             Image = null;
         }
-
-        public Message()
-        {
-            Sender = "";
-            Text = "";
-            SendTime = DateTime.Now.ToString();
-            Image = null;
-        }
+        
         public Message(string sender, string text, string st, string img = null)
         {
+            if (sender.Contains("|") || text.Contains("|") || img.Contains("|"))
+            {
+                throw new MessageException("The sender, text or image cannot contain a | character");
+            }
             Sender = sender;
             Text = text;
             SendTime = st;
@@ -61,6 +66,7 @@ namespace ChatApp
 
         public override string ToString()
         {
+
             //return Sender + " (" + SendTime.ToString() + ") " + ": " + Text; 
             return Sender + ": " + Text;
         }
@@ -110,19 +116,13 @@ namespace ChatApp
             return "d|" + Sender;
         }
 
-        //public JObject GetJson()
-        //{
-        //    return JObject.Parse(json);
-        //}
-
+        /// <summary>
+        /// Return an image message
+        /// </summary>
+        /// <returns></returns>
         public string GetImageMessage()
         {
             return "I|" + Image;
-        }
-
-        public string GetImage()
-        {
-            return Image;
         }
     }
 }
