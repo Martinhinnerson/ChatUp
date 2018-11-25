@@ -5,34 +5,27 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ChatApp"
         mc:Ignorable="d"
-        Title="ChatApp">
-
-    <Window.Resources>
-        <DataTemplate x:Key="ChatTemplate">
-            <ListBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding Chat.SelectedClient.Conversation}">
-                
-            </ListBox>
-        </DataTemplate>
-    </Window.Resources>
-    
+        Title="ChatApp"
+        MinWidth="780"
+        MinHeight="540">
     <Grid x:Name="LayoutRoot">
         <Grid.Background>
             <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                <GradientStop Color="#FF0E0D0D" Offset="0.933"/>
+                <GradientStop Color="#FF0E0D0f" Offset="0.933"/>
                 <GradientStop Color="#FF3A3737"/>
             </LinearGradientBrush>
         </Grid.Background>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1.1*" />
             <ColumnDefinition Width="3*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="10*"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
-        <Grid Margin="0,100,0,0">
+        <Grid Margin="0,50,0,0">
             <StackPanel>
-                <Grid>
+                <Grid Margin="3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
                         <ColumnDefinition Width="2*"/>
@@ -47,7 +40,7 @@
                         <TextBlock Text="Port:" Foreground="White" />
                     </ItemsControl>
                     <ItemsControl Grid.Column="1" Background="Transparent" Foreground="White"  Margin="0,0,5,0">
-                        <TextBox Text="{Binding Chat.UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text="{Binding Chat.UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Focusable="False"/>
                         <TextBlock Text="" Focusable="False" />
                         <TextBox  Text="{Binding Chat.LocalIP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <TextBox Text="{Binding Chat.LocalPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
@@ -56,23 +49,33 @@
                         <TextBox Text="{Binding Chat.RemotePort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     </ItemsControl>
                 </Grid>
-                <TextBlock Text="Connections:" Foreground="White" Background="Transparent" FontSize="14" FontWeight="Bold"/>
+
                 <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1.8*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Margin="5" Text="Connected:" Foreground="White" Background="Transparent" FontSize="12" FontWeight="Bold"/>
+                    <TextBlock Grid.Column="1" Margin="5" Text="{Binding Chat.SelectedClient.IsConnected}" Foreground="White" FontSize="12" />
+                </Grid>
+
+
+                <TextBlock Margin="5" Text="Contacts" Foreground="White" FontWeight="Bold" FontSize="14" TextDecorations="Underline"/>
+                <Grid Margin="5, 0, 5, 0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
                         <ColumnDefinition Width="3*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Search:" Foreground="White" Background="Transparent" FontSize="12" FontWeight="Bold"/>
-                    <TextBox Text="{Binding Chat:SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="2"  Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="1" FontSize="12" MaxLines="10">
-                        <TextBox.InputBindings>
-                            <KeyBinding  Key="Enter" Command="{Binding SearchButtonCommand}"/>
-                        </TextBox.InputBindings>
+                    <TextBox Text="{Binding Chat.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="2"  Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="1" FontSize="12" MaxLines="10">
+
                     </TextBox>
                 </Grid>
-                <ScrollViewer MaxHeight="100" Background="Transparent">
-                    <ListBox  ItemsSource="{Binding Chat.Clients, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding Chat.SelectedClient, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" Foreground="White"/>
+                <ScrollViewer Margin="5, 0, 5, 0" MaxHeight="125" Background="Transparent">
+                    <ListBox  ItemsSource="{Binding Chat.FilteredClients, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding Chat.SelectedClient, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" Foreground="White"/>
                 </ScrollViewer>
-                <Button Name="btnDisconnectClient" CommandParameter="DisconnectClientButton" Command="{Binding DisconnectClientCommand}"  Content="Disconnect Client" Background="{x:Null}" Foreground="White"  BorderThickness="2"/>
+                
+                <Button Margin="5" Name="btnDisconnectClient" CommandParameter="DisconnectClientButton" Command="{Binding DisconnectClientCommand}"  Content="Disconnect Client" Background="{x:Null}" Foreground="White"/>
             </StackPanel>
             <StackPanel VerticalAlignment="Bottom" Margin="0,0,0,10">
                 <Label Content="Status message:" FontWeight="Bold" Foreground="White" VerticalAlignment="Bottom" />
@@ -80,55 +83,83 @@
             </StackPanel>
         </Grid>
 
-        <ScrollViewer Grid.Column="1" Margin="10, 10, 0, 10">
-            <ListBox ItemsSource="{Binding Chat.SelectedClient.Conversation}"  Background="Transparent" Foreground="White"/>
+        
+        <ScrollViewer Grid.Column="1" Margin="5">
+            <ListBox FontSize="16" ItemsSource="{Binding Chat.SelectedClient.VisibleConversation}"  Background="Transparent" Foreground="White"/>
         </ScrollViewer>
-        <Grid Grid.Column="0" Grid.Row="1">
+        <Grid Margin="5" Grid.Column="0" Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
-            <Button Name="btnListen" Grid.Column="0" CommandParameter="ListenButton" Command="{Binding ListenButtonCommand}"  Content="{Binding ListenButtonLabel}" Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
-            <Button Name="btnInvite" Grid.Column="1" CommandParameter="InviteButton" Command="{Binding InviteButtonCommand}"  Content="{Binding InviteButtonLabel}" IsEnabled="{Binding Chat.IsNotListening}"  Background="{x:Null}" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
+            <Button Name="btnListen" Grid.Column="0" CommandParameter="ListenButton" Command="{Binding ListenButtonCommand}"  Content="{Binding ListenButtonLabel}" Background="{x:Null}" Foreground="White" FontWeight="Bold"/>
+            <Button Name="btnInvite" Grid.Column="1" CommandParameter="InviteButton" Command="{Binding InviteButtonCommand}"  Content="{Binding InviteButtonLabel}" IsEnabled="{Binding Chat.IsNotListening}"  Background="{x:Null}" Foreground="White" FontWeight="Bold"/>
         </Grid>
 
         <Label Grid.Column="0" Content="ChatApp" Height="40" VerticalAlignment="Top" HorizontalAlignment="Center" Foreground="White" FontSize="20" FontWeight="Bold"/>
 
-        <Grid Grid.Column="1" Grid.Row="1">
+        <Grid Margin="5" Grid.Column="1" Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="8*"/>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="2*"/>
             </Grid.ColumnDefinitions>
-            <TextBox Text="{Binding SendText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="2" FontSize="16" MaxLines="10" TextWrapping="Wrap">
+            <TextBox Text="{Binding SendText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  Background="Transparent" Foreground="White" FontWeight="Bold" FontSize="16" MaxLines="10" TextWrapping="Wrap">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter" Command="{Binding SendButtonCommand}"/>
                 </TextBox.InputBindings>
             </TextBox>
-            <Button Grid.Column="2" Name="btnAddImg" Content="Send Image" Command="{Binding SendImageButtonCommand}" CommandParameter="SendImageButton" Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
-            <Button Grid.Column="1" Name="btnSend" Content="Send" Command="{Binding SendButtonCommand}" CommandParameter="SendButton" Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
-
+            <Button Grid.Column="2" Name="btnAddImg" Content="Send Image" Command="{Binding SendImageButtonCommand}" CommandParameter="SendImageButton" Background="Transparent" Foreground="White" FontWeight="Bold"/>
+            <Button Grid.Column="1" Name="btnSend" Content="Send" Command="{Binding SendButtonCommand}" CommandParameter="SendButton" Background="Transparent" Foreground="White" FontWeight="Bold"/>
         </Grid>
 
-
-        <Popup Name="AcceptPopup" Grid.Column="1" IsOpen="{Binding Chat.ShowPopup}" StaysOpen="False" Placement="Center">
+        <Popup Name="AcceptPopup" Grid.Column="1" IsOpen="{Binding Chat.ShowPopup}" Placement="Center">
             <Border BorderThickness="1" BorderBrush="White">
-            <StackPanel Margin="5">
-                <TextBlock Text="{Binding Chat.PopupMessage}" Foreground="White" Background="Black" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <!--" TextBlock Text="{Binding Chat.NewClient}" Foreground="White" Background="Black" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/-->
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="1*"/>
-                        <RowDefinition Height="2*"/>
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="1*"/>
-                    </Grid.ColumnDefinitions>
-                    <Button Grid.Row="1" Content="Accept" Command="{Binding AcceptButtonCommand}" Foreground="White" Background="Black"/>
-                    <Button Grid.Row="1" Grid.Column="1" Content="Decline" Command="{Binding DeclineButtonCommand}" Foreground="White" Background="Black"/>
+                    <Grid.Background>
+                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                            <GradientStop Color="#FF0E0D0D" Offset="0.933"/>
+                            <GradientStop Color="#FF3A3737"/>
+                        </LinearGradientBrush>
+                    </Grid.Background>
+                    <StackPanel Margin="5">
+                        <TextBlock Margin="5" Text="{Binding Chat.PopupMessage}" Foreground="White" Background="Transparent" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*"/>
+                                <RowDefinition Height="2*"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Margin="5" Grid.Row="1" Content="Accept" Command="{Binding AcceptButtonCommand}" Foreground="White" Background="Transparent"/>
+                            <Button Margin="5" Grid.Row="1" Grid.Column="1" Content="Decline" Command="{Binding DeclineButtonCommand}" Foreground="White" Background="Transparent"/>
+                        </Grid>
+                    </StackPanel>
                 </Grid>
-            </StackPanel>
+            </Border>
+        </Popup>
+
+        <Popup Name="LoginPopup" Grid.Column="1" IsOpen="{Binding Chat.IsNotLoggedIn}" Placement="Center" Width="400" Height="200">
+            <Border BorderThickness="1" BorderBrush="White">
+                <Grid>
+                    <Grid.Background>
+                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                            <GradientStop Color="#FF0E0D0D" Offset="0.933"/>
+                            <GradientStop Color="#FF3A3737"/>
+                        </LinearGradientBrush>
+                    </Grid.Background>
+                    <StackPanel>
+                        <Label Margin="10" Content="Input Username" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" FontWeight="Bold" />
+                        <TextBox x:Name="LoginTextField" Text="{Binding Chat.UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="20" MaxLength="15" Width="200" Margin="10">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding LoginCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <Button Command="{Binding LoginCommand}" Content="Login" Width="100" Height="30" Margin="10" Background="Transparent" Foreground="White" FontSize="16" FontWeight="Bold"/>
+                    </StackPanel>
+                </Grid>
             </Border>
         </Popup>
 
