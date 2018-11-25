@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-X:\Documents\ChatUp\ChatApp\obj\Debug\
+C:\Users\Martin\Documents\TDDD49\TDDD49\ChatApp\obj\Debug\
 ChatApp
 none
 false
 DEBUG;TRACE
-X:\Documents\ChatUp\ChatApp\App.xaml
-2-1383239177
+C:\Users\Martin\Documents\TDDD49\TDDD49\ChatApp\App.xaml
+2-895064176
 
-12-1664741953
-141629420521
-ChatView.xaml;Page1.xaml;
+122015629171
+14418565487
+ChatView.xaml;LoginView.xaml;
 
 False
 

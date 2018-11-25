@@ -1,0 +1,23 @@
+﻿<Window x:Class="ChatApp.Login"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ChatApp"
+        mc:Ignorable="d"
+        Title="Login" Height="200" Width="400"
+        DataContext="ChatViewModel">
+    <Grid>
+        <Grid.Background>
+            <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                <GradientStop Color="#FF0E0D0D" Offset="0.933"/>
+                <GradientStop Color="#FF3A3737"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+        <StackPanel>
+            <Label Margin="10" Content="Input Username" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" FontWeight="Bold" />
+            <TextBox Text="{Binding Chat.UserName}" FontSize="20" MaxLength="15" Width="200" Margin="10"/>
+            <Button Command="{Binding LoginCommand}" Content="Login" Width="100" Margin="10" Background="Transparent" Foreground="White" FontWeight="Bold" BorderThickness="2"/>
+        </StackPanel>
+    </Grid>
+</Window>

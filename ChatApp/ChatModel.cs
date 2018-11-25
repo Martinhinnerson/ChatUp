@@ -120,6 +120,7 @@ namespace ChatApp
             {
                 _clients = value;
                 RaisePropertyChanged("Clients");
+                FilterConnections();
             }
         }
 
@@ -129,8 +130,8 @@ namespace ChatApp
         private ObservableCollection<Client> _filteredCliens;
         public ObservableCollection<Client> FilteredClients
         {
-            get {return _filteredCliens;}
-            set 
+            get { return _filteredCliens; }
+            set
             {
                 _filteredCliens = value;
                 RaisePropertyChanged("FilteredClients");
@@ -163,7 +164,7 @@ namespace ChatApp
             set
             {
                 _newClient = value;
-                RaisePropertyChanged("NewClient");
+                //RaisePropertyChanged("NewClient");
             }
         }
 
@@ -266,9 +267,20 @@ namespace ChatApp
             {
                 _searchText = value;
                 RaisePropertyChanged("SearchText");
+                FilterConnections();
             }
         }
 
+        private bool _isNotLoggedIn;
+        public bool IsNotLoggedIn
+        {
+            get { return _isNotLoggedIn; }
+            set
+            {
+                _isNotLoggedIn = value;
+                RaisePropertyChanged("IsNotLoggedIn");
+            }
+        }
 
         // =============================================================================
         // Constructors
@@ -277,7 +289,7 @@ namespace ChatApp
         {
             ShowPopup = false;
             IsNotListening = true;
-            //InviteAccepted = false;
+            IsNotLoggedIn = true;
 
             LocalIP = "127.0.0.1";
             RemoteIP = "127.0.0.1";
@@ -287,9 +299,6 @@ namespace ChatApp
             UserName = System.Environment.MachineName;
 
             Clients = new ObservableCollection<Client>();
-            FilteredClients = new ObservableCollection<Client>();
-
-            LoadConversations();
         }
 
         // =====================================================================
@@ -320,12 +329,11 @@ namespace ChatApp
                     {
                         if (listener.Pending())
                         {
-                            NewClient = new Client();
+                            NewClient = new Client(UserName);
+                            NewClient.MessageAdded += FilterConnections; //Subscribe to message added event
                             NewClient.TCP_client = listener.AcceptTcpClient();
                             NewClient.Connect();
                             Message msg = new Message(UserName);
-
-                            //Thread.Sleep(100);
 
                             NewClient.SendString(msg.GetNameMessage());//send name message to new client
 
@@ -396,38 +404,37 @@ namespace ChatApp
                  try
                  {
                      Message msg = new Message(UserName);
-                     NewClient = new Client();
+                     NewClient = new Client(UserName);
+                     NewClient.MessageAdded += FilterConnections; //Subscribe to message added event
                      NewClient.TCP_client = new TcpClient(RemoteIP, RemotePort);
                      NewClient.Connect();
 
                      Console.WriteLine("Waiting for name...");
                      NewClient.NameReceived.WaitOne();
-
+                     
                      NewClient.SendString(msg.GetNameMessage());
 
                      Console.WriteLine("Waiting for accept...");
                      NewClient.InviteAnswer.WaitOne();
-
+                     
                      if (NewClient.InviteAccepted)
                      {
                          Status = "Invite accepted.";
-                         Console.WriteLine("Invite accepted.");
                          Application.Current.Dispatcher.Invoke(new Action(() => AddClientToList()));
                      }
                      else
                      {
                          Status = "Invite declined";
-                         //remove client with sender name
-                         Clients.Remove(NewClient); //right now removes all duplicates
+                         NewClient.Disconnect();
+                         NewClient = null;
                      }
-
-                     Console.WriteLine("Exiting invite.");
+                     
                      NewClient.InviteAccepted = false;
+                     
                      return;
                  }
                  catch (SocketException se)
                  {
-                     Console.WriteLine("There is nobody listening on the remote address.");
                      Status = "There is nobody listening on the remote address.";
                      return;//exit thread
                  }
@@ -446,16 +453,30 @@ namespace ChatApp
             {
                 Status = "New client " + NewClient.Name + " connected";
                 Clients.Add(NewClient);
+                NewClient.fixVisibleCollection();
                 SelectedClient = NewClient;
                 NewClient.ClientDisconnected += ClientDisconnected;
             }
             else //Client with that name already exists, update the TCP listener and connect
             {
-                Status = "Client already exist in client list, connecting.";
-                Clients.Single(x => x.Name == NewClient.Name).TCP_client = NewClient.TCP_client;
-                SelectedClient = Clients.Single(x => x.Name == NewClient.Name); //TODO: check for exceptions here
-                SelectedClient.Connect();
+                try
+                {
+                    Status = "Client already exist in client list, connecting.";
+                    NewClient.Conversation = Clients.Single(x => x.Name == NewClient.Name).Conversation;
+                    Clients.Remove(Clients.Single(x => x.Name == NewClient.Name));
+                    Clients.Add(NewClient);
+                    NewClient.fixVisibleCollection();
+                    SelectedClient = NewClient;
+                    SelectedClient.Connect();
+                }
+                catch (InvalidOperationException)
+                {
+                    MessageBox.Show("Error: There is multiple clients with the same name in the clients list.");
+                    return;
+                }
             }
+            
+            FilterConnections();
         }
 
         /// <summary>
@@ -467,7 +488,6 @@ namespace ChatApp
             if (Clients.Any())
             {
                 Application.Current.Dispatcher.Invoke(new Action(() => RemoveClientFromList()));
-                Clients.Remove(SelectedClient);
             }
             else
             {
@@ -491,7 +511,15 @@ namespace ChatApp
         {
             if (Clients.Any())
             {
-                Clients.Single(i => i.Name == SelectedClient.Name).Disconnect(); //look for exception here
+                try
+                {
+                    Clients.Single(i => i.Name == SelectedClient.Name).Disconnect(); //look for exception here
+                }
+                catch (InvalidOperationException)
+                {
+                    MessageBox.Show("Error: There is multiple clients with the same name in the clients list.");
+                    return;
+                }
             }
             else
             {
@@ -511,7 +539,15 @@ namespace ChatApp
         {
             if (Clients.Any())
             {
-                Clients.Single(i => i.Name == SelectedClient.Name).Connect(); //look for exception here
+                try
+                {
+                    Clients.Single(i => i.Name == SelectedClient.Name).Connect(); //look for exception here
+                }
+                catch (InvalidOperationException)
+                {
+                    MessageBox.Show("Error: There is multiple clients with the same name in the clients list.");
+                    return;
+                }
             }
             else
             {
@@ -525,15 +561,25 @@ namespace ChatApp
         /// <param name="msg">string to send</param>
         public void SendToSelectedClient(string msg)
         {
-
-            if (Clients.Single(i => i.Name == SelectedClient.Name).IsConnected)
+            if (Clients.Any())
             {
-                Status = "Message sent to " + SelectedClient.Name;
-                Clients.Single(i => i.Name == SelectedClient.Name).SendMessage(msg, UserName);
-            }
-            else
-            {
-                Status = "Can't send, the client is not connected";
+                try
+                {
+                    if (Clients.Single(i => i.Name == SelectedClient.Name).IsConnected)
+                    {
+                        Status = "Message sent to " + SelectedClient.Name;
+                        Clients.Single(i => i.Name == SelectedClient.Name).SendMessage(msg, UserName);
+                    }
+                    else
+                    {
+                        Status = "Can't send, the client is not connected";
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    MessageBox.Show("Error: There is multiple clients with the same name in the clients list.");
+                    return;
+                }
             }
         }
 
@@ -541,17 +587,28 @@ namespace ChatApp
         /// Send an image to the selected client
         /// </summary>
         /// <param name="msg">string to send</param>
-        public void SendImageToSelectedClient(byte[] img)
+        public void SendImageToSelectedClient(string img)
         {
+            if (Clients.Any())
+            {
+                try
+                {
+                    if (Clients.Single(i => i.Name == SelectedClient.Name).IsConnected)
+                    {
+                        Status = "Image sent to " + SelectedClient.Name;
+                        Clients.Single(i => i.Name == SelectedClient.Name).SendImage(UserName, img);
+                    }
+                    else
+                    {
+                        Status = "Can't send, the client is not connected";
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    MessageBox.Show("Error: There is multiple clients with the same name in the clients list.");
+                    return;
+                }
 
-            if (Clients.Single(i => i.Name == SelectedClient.Name).IsConnected)
-            {
-                Status = "Image sent to " + SelectedClient.Name;
-                Clients.Single(i => i.Name == SelectedClient.Name).SendImage(img, UserName);
-            }
-            else
-            {
-                Status = "Can't send, the client is not connected";
             }
         }
 
@@ -559,15 +616,20 @@ namespace ChatApp
         {
             if (!string.IsNullOrEmpty(SearchText)) //if the searchfield is not empty
             {
-               FilteredClients = from client in Clients
-                   where client.Name == SearchText
-                   orderby client.Name
-                   select cli;
+               IEnumerable<Client> filtered = from client in Clients
+                   where client.Name.Contains(SearchText)
+                   orderby client.LastReceivedMessageTime descending
+                   select client;
+                
+                FilteredClients = new ObservableCollection<Client>(filtered);
+            }
+            else
+            {
+                IEnumerable<Client> filtered = from client in Clients
+                                               orderby client.LastReceivedMessageTime descending
+                                               select client;
 
-                foreach(Client client in FilteredClients)
-                {
-                    Console.WriteLine(client.name);
-                }
+                FilteredClients = new ObservableCollection<Client>(filtered);
             }
         }
 
@@ -577,41 +639,67 @@ namespace ChatApp
         public void LoadConversations()
         {
             string folderpath = Directory.GetCurrentDirectory() + @"\Conversations\";
-            Console.WriteLine(folderpath);
-            foreach (string file in Directory.EnumerateFiles(folderpath, "*.JSON"))
+            DirectoryInfo dir = new DirectoryInfo(Directory.GetCurrentDirectory() + @"\Conversations\");
+            //Console.WriteLine(folderpath);
+            FileInfo[] files = dir.GetFiles("*.JSON");
+            foreach (FileInfo file in files)
             {
+                
+                StreamReader reader = new StreamReader(folderpath + file.Name);
                 try
                 {
-                    StreamReader reader = new StreamReader(file);
                     string input = reader.ReadToEnd();
-
-                    Console.WriteLine(input);
 
                     JArray output = JsonConvert.DeserializeObject<JArray>(input);
 
 
-                    string name = output[0]["Sender"].ToString();
+                    string[] splitStr = file.Name.Split(',');
 
-                    Client client = new Client(name);
-
-                    foreach (var item in output.Children())
+                    if (splitStr[0] == UserName)
                     {
-                        string s = item["Sender"].ToString();
-                        string st = item["SendTime"].ToString();
-                        string t = item["Text"].ToString();
-                        Message m = new Message(s, t, st);
-                        client.Conversation.Add(m);
-                    }
-                    Clients.Add(client);
 
-                    reader.Close();
+                        string clientName = splitStr[1].Substring(0, splitStr[1].LastIndexOf(".")); //get name without extension
+
+                        Client client = new Client(clientName, UserName);
+
+                        foreach (var item in output.Children())
+                        {
+                            string s = item["Sender"].ToString();
+                            string st = item["SendTime"].ToString();
+                            string t = item["Text"].ToString();
+                            string img = item["Image"].ToString();
+                            Message m = new Message(s, t, st, img);
+                            client.Conversation.Add(m);
+                        }
+                        client.fixVisibleCollection();
+                        Clients.Add(client);
+                    }
+                    
                 }
-                catch (Exception e) //TODO: change exception type
+                catch (IndexOutOfRangeException ior)
                 {
-                    Status = "Error loading client file: " + file.ToString();
-                    Console.WriteLine(e);
+                    Console.WriteLine("The read file {0} does not have correct naming format.", file.Name);
                     continue;
                 }
+                catch (JsonReaderException jre)
+                {
+                    Console.WriteLine("The read file {0} does not have correct JSON formating", file.Name);
+                    continue;
+                }
+                finally
+                {
+                    reader.Close();
+                }
+            }
+
+            FilterConnections();
+        }
+        
+        public void StoreConversations()
+        {
+            foreach(Client client in Clients)
+            {
+                client.StoreConversation();
             }
         }
     }

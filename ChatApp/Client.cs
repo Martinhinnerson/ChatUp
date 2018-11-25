@@ -11,6 +11,8 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 
 namespace ChatApp
 {
@@ -77,6 +79,9 @@ namespace ChatApp
         /// The name is returned Client.toString()
         /// </summary>
         public string Name = "";
+        public DateTime LastReceivedMessageTime;
+
+        private string _username;
 
         /// <summary>
         /// Collects received messages
@@ -91,44 +96,71 @@ namespace ChatApp
             }
         }
 
+        private ObservableCollection<object> _visibleConversation;
+        public ObservableCollection<Object> VisibleConversation
+        {
+            get { return _visibleConversation; }
+            set
+            {
+                _visibleConversation = value;
+            }
+        }
+
         public Message newMessage { get; set; }
 
         public AutoResetEvent InviteAnswer = new AutoResetEvent(false);
         public AutoResetEvent NameReceived = new AutoResetEvent(false);
+        public delegate void MessageAddedEvent();
+        public event MessageAddedEvent MessageAdded;
         public delegate void DisconnectEvent(string name);
         public event DisconnectEvent ClientDisconnected;
 
         // =============================================================================
         // Constructor
         // =============================================================================
-        public Client(TcpClient client)
+        public Client(TcpClient client, string user)
         {
-            Console.WriteLine("client created");
             InviteAccepted = false;
             IsConnected = false;
             TCP_client = client;
+            _username = user;
             Conversation = new ObservableCollection<Message>();
+            VisibleConversation = new ObservableCollection<object>();
+            LastReceivedMessageTime = DateTime.Now;
         }
 
-        public Client()
+        public Client(string user)
         {
-            Console.WriteLine("client created");
             InviteAccepted = false;
             IsConnected = false;
             TCP_client = null;
+            _username = user;
             Conversation = new ObservableCollection<Message>();
-            //StoreConversation();
+            VisibleConversation = new ObservableCollection<object>();
+            LastReceivedMessageTime = DateTime.Now;
         }
-        public Client(string name)
+        public Client(string name, string user)
         {
-            Console.WriteLine("client created");
             InviteAccepted = false;
             IsConnected = false;
             TCP_client = null;
             Name = name;
+            _username = user;
             Conversation = new ObservableCollection<Message>();
-            //StoreConversation();
+            VisibleConversation = new ObservableCollection<object>();
+            LastReceivedMessageTime = DateTime.Now;
         }
+
+        /// <summary>
+        /// Destructor (Finalizer)
+        /// </summary>
+        ~Client()
+        {
+            Disconnect();
+            Conversation = null;
+            TCP_client = null;
+        }
+
         // =============================================================================
         // Member functions
         // =============================================================================
@@ -170,7 +202,7 @@ namespace ChatApp
                 _reader.Close();
                 //_client.Close();
                 //StoreConversation();
-            }
+            } //TODO: add socket exception
         }
 
         /// <summary>
@@ -180,7 +212,7 @@ namespace ChatApp
         /// <param name="reader"></param>
         public void Listen(StreamReader reader)
         {
-            while (_listenToClient)
+            while (_listenToClient && IsConnected)
             {
                 try
                 {
@@ -192,21 +224,21 @@ namespace ChatApp
                         Disconnect();
                     }
 
-                    Console.WriteLine("message reveived");
-                    Console.WriteLine(input);
+                   // Console.WriteLine("message reveived");
+                   // Console.WriteLine(input);
                   
                     ReceivedMessage(input);
 
                 }
                 catch (IOException ioe)
                 {
-                    Console.WriteLine(ioe);
+                    //Console.WriteLine(ioe);
                     Disconnect();
                 }
                 catch (ObjectDisposedException ode)
                 {
                     Disconnect();
-                    Console.WriteLine(ode);
+                    //Console.WriteLine(ode);
                 }
                 catch (NullReferenceException nre)
                 {
@@ -241,37 +273,35 @@ namespace ChatApp
             if (IsConnected)
             {
                 //Console.WriteLine("Sending message to client with id " + ID);
-                Message msg = new Message(name, str);
-                _writer.WriteLine(msg.GetPrintableMessage());
+                newMessage = new Message(name, str);
+                AddToConversation();
+                
+                _writer.WriteLine(newMessage.GetPrintableMessage());
                 _writer.Flush();
-                Console.WriteLine("In client send");
             }
         }
 
-        public void SendImage(byte[] img, string name)
+        public void SendImage(string name, string img)
         {
             if (IsConnected)
             {
                 int size = img.Length;
                 
-                Message msg = new Message(name, img);
-            
-                _writer.WriteLine(msg.GetImageMessage());
+                newMessage = new Message(name);
+                newMessage.Image = img;
+
+                AddToConversation();
+
+                _writer.WriteLine(newMessage.GetImageMessage());
                 _writer.Flush();
 
-                Thread.Sleep(100);
-                _writer.Write(msg.GetImage());
+
+
+                //Thread.Sleep(100);
+                //_writer.Write(newMessage.GetImage());
             }
         }
 
-
-        public void AddToConversation()
-        {
-            Console.WriteLine(Conversation.Count);
-            Conversation.Add(newMessage);
-            Console.WriteLine(newMessage);
-            Console.WriteLine(Conversation.Count);
-        }
 
 
         /// <summary>
@@ -289,7 +319,7 @@ namespace ChatApp
                 {
                     if (splitStr[0].Equals("N"))
                     {
-                        Console.WriteLine("Received name");
+                        //Console.WriteLine("Received name");
                         Name = splitStr[1];
                         NameReceived.Set();
                     }
@@ -300,21 +330,26 @@ namespace ChatApp
                     }
                     else if (splitStr[0].Equals("A"))
                     {
-                        Console.WriteLine("Received accept");
+                       // Console.WriteLine("Received accept");
                         InviteAccepted = true;
                         InviteAnswer.Set();
                     }
                     else if (splitStr[0].Equals("D"))
                     {
-                        Console.WriteLine("Received decline");
+                        //Console.WriteLine("Received decline");
                         InviteAccepted = false;
                         InviteAnswer.Set();
                     }
                     else if (splitStr[0].Equals("d"))
                     {
-                        Console.WriteLine("Received disconnect");
+                       // Console.WriteLine("Received disconnect");
                         ClientDisconnected(splitStr[1]);
                         Disconnect(); //look for exception here             
+                    }
+                    else if (splitStr[0].Equals("I"))
+                    {
+                        Console.WriteLine(str);
+                        AddImage(splitStr[1]);
                     }
                 }
                 else
@@ -336,23 +371,65 @@ namespace ChatApp
             Application.Current.Dispatcher.Invoke(new Action(() => AddToConversation()));
         }
 
+        public void AddImage(string img)
+        {
+            newMessage = new Message(Name);
+            newMessage.Image = img;
+            Application.Current.Dispatcher.Invoke(new Action(() => AddToConversation()));
+        }
+
+        public void AddToConversation()
+        {
+            Conversation.Add(newMessage);
+            LastReceivedMessageTime = DateTime.Now;
+            fixVisibleCollection();
+            MessageAdded.Invoke();
+        }
+
+
         public void StoreConversation()
         {
             string filename = Name + ".JSON";
-            using (StreamWriter file = File.CreateText(Directory.GetCurrentDirectory() + @"\Conversations\" + filename))
+            using (StreamWriter file = File.CreateText(Directory.GetCurrentDirectory() + @"\Conversations\" + _username + ','+ filename))
             using (JsonTextWriter writer = new JsonTextWriter(file))
             {
                 JsonSerializer serializer = new JsonSerializer();
-                //string output = JsonConvert.SerializeObject(Conversation);
-
                 serializer.Serialize(writer, Conversation);
-
-                //writer.Write(output);
-
-                //Conversation.WriteTo(writer);
                 writer.Close();
                 file.Close();
             }
+        }
+
+        public void fixVisibleCollection()
+        {
+            VisibleConversation.Clear();
+            foreach(Message m in Conversation)
+            {
+                string name = m.Sender;
+                if(m.Image == null || m.Image == "")
+                {
+                    VisibleConversation.Add(m.ToString());
+                }
+                else
+                {
+                    Image img = Base64ToImage(m.Image);
+                    img.Width = 200;
+                    VisibleConversation.Add(name + ": ");
+                    VisibleConversation.Add(img);
+                }
+            }//TODO: Add exception
+        }
+
+        public Image Base64ToImage(string str)
+        {
+            byte[] byteImg = Convert.FromBase64String(str);
+            
+            Image img = new Image();
+            using (MemoryStream ms = new MemoryStream(byteImg, 0, byteImg.Length))
+            {
+                img.Source = BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+            }
+            return img;
         }
     }
 }

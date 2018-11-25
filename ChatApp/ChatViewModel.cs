@@ -76,9 +76,10 @@ namespace ChatApp
             {
                 _sendText = value;
                 RaisePropertyChanged("SendText");
+
             }
         }
-
+        
         // =====================================================================
         // Icommands for the buttons
         // =====================================================================
@@ -89,8 +90,8 @@ namespace ChatApp
         public ICommand AcceptButtonCommand { get; set; }
         public ICommand DeclineButtonCommand { get; set; }
         public ICommand DisconnectClientCommand { get; set; }
-        public ICommand SearchButtonCommand { get; set; }
-        
+        public ICommand LoginCommand { get; set; }
+        public ICommand StoreConversationsCommand { get; set; }
         // =====================================================================
         // Constructor
         // =====================================================================
@@ -98,7 +99,6 @@ namespace ChatApp
         {
             ListenButtonLabel = "Search for connection";
             InviteButtonLabel = "Invite";
-            Chat = new ChatModel();
 
             ListenButtonCommand = new RelayCommand(new Action<object>(ListenButtonClick));
             InviteButtonCommand = new RelayCommand(new Action<object>(InviteButtonClick));
@@ -107,16 +107,25 @@ namespace ChatApp
             AcceptButtonCommand = new RelayCommand(new Action<object>(AcceptButtonClick));
             DeclineButtonCommand = new RelayCommand(new Action<object>(DeclineButtonClick));
             DisconnectClientCommand = new RelayCommand(new Action<object>(DisconnectClientClick));
-            SearchButtonCommand = new RelayCommand(new Action<object>(SearchButtonClick));    
+            LoginCommand = new RelayCommand(new Action<object>(Login));
+            StoreConversationsCommand = new RelayCommand(new Action<object>(StoreConversations));
 
+            Chat = new ChatModel();
             Chat.AddressBusy += AddressAlreadyInUse; //subscribe to event
-
         }
-        
+
         // =====================================================================
         // Member functions
         // =====================================================================
-        
+
+
+        private void Login(object sender)
+        {
+            Chat.IsNotLoggedIn = false;
+            Chat.LoadConversations();
+        }
+
+
         /// <summary>
         /// Functin that runs when the listen button is clicked
         /// </summary>
@@ -173,7 +182,7 @@ namespace ChatApp
             //TODO: implement
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
 
-            dlg.Filter = "JPG Files (*.jpg)|*.jpg|JPEG Files (*.jpeg)|*.jpeg|PNG Files (*.png)|*.png|GIF Files (*.gif)|*.gif";
+            dlg.Filter = "JPG Files (*.jpg)|*.jpg|JPEG Files (*.jpeg)|*.jpeg";
 
             Nullable<bool> result = dlg.ShowDialog();
 
@@ -183,7 +192,8 @@ namespace ChatApp
                 Console.WriteLine(filename);
                 
                 Image image = new Image();
-                //image.Source =  new BitmapImage(new Uri(@filename));
+
+                image.Source = new BitmapImage(new Uri(@filename));
 
                 byte[] byteImg;
 
@@ -194,8 +204,10 @@ namespace ChatApp
                     encoder.Save(ms);
                     byteImg = ms.ToArray();
                 }
-                Chat.SendImageToSelectedClient(byteImg);
                 
+                string imageStr = Convert.ToBase64String(byteImg);
+
+                Chat.SendImageToSelectedClient(imageStr);
 
             }
         }
@@ -227,6 +239,15 @@ namespace ChatApp
             Chat.Clients.Single(i => i.Name == Chat.SelectedClient.Name).SendString(msg.GetDisconnectMessage());//Look for exception here
             Chat.DisconnectSelectedClient();
         }
+        private void SearchClick(object sender)
+        {
+            Chat.FilterConnections();
+        }
+
+        private void StoreConversations(object sender)
+        {
+            Chat.StoreConversations();
+        }
 
         /// <summary>
         /// Function runs when the Chat.AddressBusy event is fired
@@ -238,9 +259,5 @@ namespace ChatApp
             Chat.StopListening();
         }
 
-        private void SearchButtonClick()
-        {
-            Chat.FilterConnections();
-        }
     }
 }
