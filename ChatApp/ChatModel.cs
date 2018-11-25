@@ -139,7 +139,6 @@ namespace ChatApp
 
         /// <summary>
         /// The client currently selected in the GUI
-        /// TODO: this should probaly be a pointer instead.
         /// </summary>
         private Client _selectedClient;
         public Client SelectedClient
@@ -169,7 +168,6 @@ namespace ChatApp
 
         /// <summary>
         /// The last message received
-        /// TODO: change this!
         /// </summary>
         private string _lastReceivedMessage;
         public string LastReceivedMessage
@@ -193,7 +191,10 @@ namespace ChatApp
         /// <returns></returns>
         public AutoResetEvent WaitForUser = new AutoResetEvent(false);
 
-        //TODO: Change this name?
+        /// <summary>
+        /// Used to wait for a Name Message when connection to a new client
+        /// </summary>
+        /// <returns></returns>
         public AutoResetEvent WaitForName = new AutoResetEvent(false);
 
         /// <summary>
@@ -368,7 +369,10 @@ namespace ChatApp
                     Status = "This socket is already in use";
                     Console.WriteLine("This socket adress is already in use.");
                     AddressBusy();
-                    return; //exit thread
+                }
+                finally
+                {
+                    return;//exit thread
                 }
 
             });
@@ -429,7 +433,10 @@ namespace ChatApp
                  {
                      Console.WriteLine("There is nobody listening on the remote address.");
                      Status = "There is nobody listening on the remote address.";
-                     return;//exit thread
+                 }
+                 finally
+                 {
+                     return; //exit thread
                  }
              });
         }
@@ -440,21 +447,29 @@ namespace ChatApp
         /// </summary>
         public void AddClientToList()
         {
-            var client = Clients.FirstOrDefault(x => x.Name == NewClient.Name);
+            try
+            {
+                    
+                var client = Clients.FirstOrDefault(x => x.Name == NewClient.Name);
 
-            if (client == null) //there exists no client with the new name, add a new one
-            {
-                Status = "New client " + NewClient.Name + " connected";
-                Clients.Add(NewClient);
-                SelectedClient = NewClient;
-                NewClient.ClientDisconnected += ClientDisconnected;
+                if (client == null) //there exists no client with the new name, add a new one
+                {
+                    Status = "New client " + NewClient.Name + " connected";
+                    Clients.Add(NewClient);
+                    SelectedClient = NewClient;
+                    NewClient.ClientDisconnected += ClientDisconnected;
+                }
+                else //Client with that name already exists, update the TCP listener and connect
+                {
+                    Status = "Client already exist in client list, connecting.";
+                    Clients.Single(x => x.Name == NewClient.Name).TCP_client = NewClient.TCP_client;
+                    SelectedClient = Clients.Single(x => x.Name == NewClient.Name);
+                    SelectedClient.Connect();
+                }
             }
-            else //Client with that name already exists, update the TCP listener and connect
+            catch(exception e)
             {
-                Status = "Client already exist in client list, connecting.";
-                Clients.Single(x => x.Name == NewClient.Name).TCP_client = NewClient.TCP_client;
-                SelectedClient = Clients.Single(x => x.Name == NewClient.Name); //TODO: check for exceptions here
-                SelectedClient.Connect();
+                    //TODO:
             }
         }
 

@@ -122,10 +122,5 @@ namespace ChatApp
         {
             return "i|" + Sender;
         }
-
-        public byte[] GetImage()
-        {
-            return Image;
-        }
     }
 }

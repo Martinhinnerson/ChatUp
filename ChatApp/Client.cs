@@ -70,6 +70,10 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// This boolean is set when an invite is accepted and is false otherwise
+        /// </summary>
+        /// <value></value>
         public bool InviteAccepted { get; set; }
 
         /// <summary>
@@ -91,15 +95,34 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Temporary message where new messages are stored
+        /// </summary>
+        /// <value></value>
         public Message newMessage { get; set; }
 
+        /// <summary>
+        /// Event that is activated when an answer is received
+        /// </summary>
+        /// <returns></returns>
         public AutoResetEvent InviteAnswer = new AutoResetEvent(false);
+        
+        /// <summary>
+        /// Event that is set when we have received the new clients name in a NameMessage
+        /// </summary>
+        /// <returns></returns>
         public AutoResetEvent NameReceived = new AutoResetEvent(false);
+        
+        /// <summary>
+        /// Event for when a client is disconnected
+        /// Is used by the ChatModel to know when a client has disconnected
+        /// </summary>
+        /// <param name="name"></param>
         public delegate void DisconnectEvent(string name);
         public event DisconnectEvent ClientDisconnected;
 
         // =============================================================================
-        // Constructor
+        // Constructors
         // =============================================================================
         public Client(TcpClient client)
         {
@@ -129,12 +152,13 @@ namespace ChatApp
             Conversation = new ObservableCollection<Message>();
             //StoreConversation();
         }
+
         // =============================================================================
         // Member functions
         // =============================================================================
 
         /// <summary>
-        /// Ovveride so that toStrinf() returns the name of the client
+        /// Ovveride so that toString() returns the name of the client
         /// </summary>
         /// <returns></returns>
         public override string ToString()
@@ -164,7 +188,7 @@ namespace ChatApp
             if (IsConnected)
             {
                 IsConnected = false;
-                Console.WriteLine("Client " + Name + "Disconnected");
+                Console.WriteLine("Client " + Name + " disconnected");
                 _listenToClient = false;
                 _writer.Close();
                 _reader.Close();
@@ -248,6 +272,11 @@ namespace ChatApp
             }
         }
 
+        /// <summary>
+        /// Send an image to the client if we are connected
+        /// </summary>
+        /// <param name="img"></param>
+        /// <param name="name"></param>
         public void SendImage(byte[] img, string name)
         {
             if (IsConnected)
@@ -265,12 +294,24 @@ namespace ChatApp
         }
 
 
+        /// <summary>
+        /// Add a message to the clients list
+        /// This function schedules AddToConversation to the main thread
+        /// </summary>
+        /// <param name="msg"></param>
+        public void AddMessage(string msg)
+        {
+            newMessage = new Message(Name, msg);
+            Application.Current.Dispatcher.Invoke(new Action(() => AddToConversation()));
+        }
+
+        /// <summary>
+        /// Add a message to the conversation list.
+        /// This function is usually called with dispatcher to the main thread because it has to change observable collection
+        /// </summary>
         public void AddToConversation()
         {
-            Console.WriteLine(Conversation.Count);
             Conversation.Add(newMessage);
-            Console.WriteLine(newMessage);
-            Console.WriteLine(Conversation.Count);
         }
 
 
@@ -287,29 +328,34 @@ namespace ChatApp
 
                 if (splitStr.Length > 1)
                 {
+                    //Name message
                     if (splitStr[0].Equals("N"))
                     {
                         Console.WriteLine("Received name");
                         Name = splitStr[1];
                         NameReceived.Set();
                     }
+                    //Normal message
                     else if (splitStr[0].Equals("M"))
                     {
                         AddMessage(splitStr[1]);
                         StoreConversation();
                     }
+                    //Accept message
                     else if (splitStr[0].Equals("A"))
                     {
                         Console.WriteLine("Received accept");
                         InviteAccepted = true;
                         InviteAnswer.Set();
                     }
+                    //Decline message
                     else if (splitStr[0].Equals("D"))
                     {
                         Console.WriteLine("Received decline");
                         InviteAccepted = false;
                         InviteAnswer.Set();
                     }
+                    //Disconnect message telling the clinet we are disconnecting
                     else if (splitStr[0].Equals("d"))
                     {
                         Console.WriteLine("Received disconnect");
@@ -317,6 +363,7 @@ namespace ChatApp
                         Disconnect(); //look for exception here             
                     }
                 }
+                //All other messages are invalid
                 else
                 {
                     Console.WriteLine(str);
@@ -330,28 +377,32 @@ namespace ChatApp
 
         }
 
-        public void AddMessage(string msg)
-        {
-            newMessage = new Message(Name, msg);
-            Application.Current.Dispatcher.Invoke(new Action(() => AddToConversation()));
-        }
-
+        /// <summary>
+        /// Store the Conversation list to a .JSON file with JSON formating
+        /// </summary>
         public void StoreConversation()
         {
-            string filename = Name + ".JSON";
-            using (StreamWriter file = File.CreateText(Directory.GetCurrentDirectory() + @"\Conversations\" + filename))
-            using (JsonTextWriter writer = new JsonTextWriter(file))
+            try{
+                string filename = Name + ".JSON";
+
+                using (StreamWriter file = File.CreateText(Directory.GetCurrentDirectory() + @"\Conversations\" + filename))
+                using (JsonTextWriter writer = new JsonTextWriter(file))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    //string output = JsonConvert.SerializeObject(Conversation);
+
+                    serializer.Serialize(writer, Conversation);
+
+                    //writer.Write(output);
+
+                    //Conversation.WriteTo(writer);
+                    writer.Close();
+                    file.Close();
+                }
+            }
+            catch(Exception e) 
             {
-                JsonSerializer serializer = new JsonSerializer();
-                //string output = JsonConvert.SerializeObject(Conversation);
-
-                serializer.Serialize(writer, Conversation);
-
-                //writer.Write(output);
-
-                //Conversation.WriteTo(writer);
-                writer.Close();
-                file.Close();
+                //TODO: change this exception
             }
         }
     }
