@@ -1,0 +1,17 @@
+X:\Documents\TDDD49\ChatApp\bin\Release\ChatApp.exe.config
+X:\Documents\TDDD49\ChatApp\bin\Release\ChatApp.exe
+X:\Documents\TDDD49\ChatApp\bin\Release\ChatApp.pdb
+X:\Documents\TDDD49\ChatApp\bin\Release\Newtonsoft.Json.dll
+X:\Documents\TDDD49\ChatApp\bin\Release\Newtonsoft.Json.xml
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatView.g.cs
+X:\Documents\TDDD49\ChatApp\obj\Release\App.g.cs
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatApp_MarkupCompile.cache
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatApp_MarkupCompile.lref
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatView.baml
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatApp.g.resources
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatApp.Properties.Resources.resources
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatApp.csproj.GenerateResource.cache
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatApp.csproj.CoreCompileInputs.cache
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatApp.csproj.CopyComplete
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatApp.exe
+X:\Documents\TDDD49\ChatApp\obj\Release\ChatApp.pdb

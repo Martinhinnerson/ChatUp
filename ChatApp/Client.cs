@@ -467,6 +467,7 @@ namespace ChatApp
             LastReceivedMessageTime = DateTime.Now;
             fixVisibleCollection();
             MessageAdded.Invoke();
+            StoreConversation();
         }
 
         /// <summary>
